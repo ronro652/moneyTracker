@@ -1,0 +1,64 @@
+export interface Portfolio {
+  id: number;
+  name: string;
+  description: string;
+  color: string;
+  created_at: string;
+}
+
+export interface Holding {
+  id: number;
+  ticker: string;
+  name: string;
+  shares: number;
+  avg_cost: number;
+  current_price: number | null;
+  change_percent: number | null;
+  created_at: string;
+  portfolio_id: number;
+}
+
+export interface PortfolioSnapshot {
+  date: string;
+  total_value: number;
+  total_cost: number;
+  portfolio_id: number;
+}
+
+export interface PriceData {
+  price: number;
+  changePercent: number;
+}
+
+export type WidgetType = "summary" | "chart" | "holdings" | "add-stock" | "allocation";
+
+export interface DashboardWidget {
+  id: string;
+  type: WidgetType;
+  label: string;
+  visible: boolean;
+  order: number;
+}
+
+export interface DashboardConfig {
+  widgets: DashboardWidget[];
+}
+
+export const DEFAULT_WIDGETS: DashboardWidget[] = [
+  { id: "summary", type: "summary", label: "Summary Cards", visible: true, order: 0 },
+  { id: "add-stock", type: "add-stock", label: "Add Stock", visible: true, order: 1 },
+  { id: "chart", type: "chart", label: "Performance Chart", visible: true, order: 2 },
+  { id: "allocation", type: "allocation", label: "Portfolio Allocation", visible: true, order: 3 },
+  { id: "holdings", type: "holdings", label: "Holdings Table", visible: true, order: 4 },
+];
+
+export const PORTFOLIO_COLORS = [
+  "#10b981",
+  "#6366f1",
+  "#f59e0b",
+  "#ef4444",
+  "#8b5cf6",
+  "#ec4899",
+  "#06b6d4",
+  "#f97316",
+];
