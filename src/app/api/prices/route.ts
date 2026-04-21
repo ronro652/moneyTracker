@@ -1,10 +1,18 @@
 import { getDb } from "@/lib/db";
+import { requireAuth } from "@/lib/require-auth";
 import { fetchStockQuote } from "@/lib/alpha-vantage";
 import { NextResponse } from "next/server";
 
 export async function POST() {
+  const auth = requireAuth();
+  if (auth instanceof NextResponse) return auth;
+
   const db = getDb();
-  const holdings = db.prepare("SELECT DISTINCT ticker FROM holdings").all() as { ticker: string }[];
+  const holdings = db.prepare(`
+    SELECT DISTINCT h.ticker FROM holdings h
+    JOIN portfolios p ON p.id = h.portfolio_id
+    WHERE p.user_id = ?
+  `).all(auth.user.id) as { ticker: string }[];
 
   const results: Record<string, { price: number; changePercent: number }> = {};
 
@@ -33,7 +41,7 @@ export async function POST() {
     }
   }
 
-  const portfolios = db.prepare("SELECT id FROM portfolios").all() as { id: number }[];
+  const portfolios = db.prepare("SELECT id FROM portfolios WHERE user_id = ?").all(auth.user.id) as { id: number }[];
   const today = new Date().toISOString().split("T")[0];
 
   for (const { id: pid } of portfolios) {

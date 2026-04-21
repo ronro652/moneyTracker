@@ -1,13 +1,17 @@
 import { getDb } from "@/lib/db";
+import { requireAuth } from "@/lib/require-auth";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(
   _req: Request,
   { params }: { params: { id: string } }
 ) {
+  const auth = requireAuth();
+  if (auth instanceof NextResponse) return auth;
+
   const { id } = params;
   const db = getDb();
-  const portfolio = db.prepare("SELECT * FROM portfolios WHERE id = ?").get(id);
+  const portfolio = db.prepare("SELECT * FROM portfolios WHERE id = ? AND user_id = ?").get(id, auth.user.id);
   if (!portfolio) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
@@ -18,12 +22,15 @@ export async function PUT(
   req: NextRequest,
   { params }: { params: { id: string } }
 ) {
+  const auth = requireAuth();
+  if (auth instanceof NextResponse) return auth;
+
   const { id } = params;
   const body = await req.json();
   const { name, description, color } = body;
 
   const db = getDb();
-  const existing = db.prepare("SELECT * FROM portfolios WHERE id = ?").get(id);
+  const existing = db.prepare("SELECT * FROM portfolios WHERE id = ? AND user_id = ?").get(id, auth.user.id);
   if (!existing) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
@@ -40,12 +47,20 @@ export async function DELETE(
   _req: Request,
   { params }: { params: { id: string } }
 ) {
+  const auth = requireAuth();
+  if (auth instanceof NextResponse) return auth;
+
   const { id } = params;
   const db = getDb();
 
-  const count = (db.prepare("SELECT COUNT(*) as c FROM portfolios").get() as { c: number }).c;
+  const count = (db.prepare("SELECT COUNT(*) as c FROM portfolios WHERE user_id = ?").get(auth.user.id) as { c: number }).c;
   if (count <= 1) {
     return NextResponse.json({ error: "Cannot delete the last portfolio" }, { status: 400 });
+  }
+
+  const portfolio = db.prepare("SELECT id FROM portfolios WHERE id = ? AND user_id = ?").get(id, auth.user.id);
+  if (!portfolio) {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
   db.prepare("DELETE FROM holdings WHERE portfolio_id = ?").run(id);

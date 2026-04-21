@@ -22,6 +22,23 @@ function hasColumn(db: Database.Database, table: string, column: string): boolea
 
 function initDb(db: Database.Database) {
   db.exec(`
+    CREATE TABLE IF NOT EXISTS users (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      email TEXT NOT NULL UNIQUE,
+      name TEXT NOT NULL,
+      password_hash TEXT NOT NULL,
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+
+    CREATE TABLE IF NOT EXISTS sessions (
+      id TEXT PRIMARY KEY,
+      user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      expires_at TEXT NOT NULL,
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_sessions_user ON sessions(user_id);
+
     CREATE TABLE IF NOT EXISTS portfolios (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       name TEXT NOT NULL,
@@ -62,9 +79,8 @@ function initDb(db: Database.Database) {
 }
 
 function migrate(db: Database.Database) {
-  const defaultPortfolio = db.prepare("SELECT id FROM portfolios WHERE id = 1").get();
-  if (!defaultPortfolio) {
-    db.prepare("INSERT INTO portfolios (id, name, description, color) VALUES (1, 'My Portfolio', 'Default portfolio', '#10b981')").run();
+  if (!hasColumn(db, "portfolios", "user_id")) {
+    db.exec("ALTER TABLE portfolios ADD COLUMN user_id INTEGER REFERENCES users(id)");
   }
 
   if (!hasColumn(db, "holdings", "portfolio_id")) {

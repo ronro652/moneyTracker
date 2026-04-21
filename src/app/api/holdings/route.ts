@@ -1,19 +1,25 @@
 import { getDb } from "@/lib/db";
+import { requireAuth } from "@/lib/require-auth";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(req: NextRequest) {
+  const auth = requireAuth();
+  if (auth instanceof NextResponse) return auth;
+
   const portfolioId = req.nextUrl.searchParams.get("portfolio_id");
   const db = getDb();
 
   let query = `
     SELECT h.*, sp.price as current_price, sp.change_percent
     FROM holdings h
+    JOIN portfolios p ON p.id = h.portfolio_id
     LEFT JOIN stock_prices sp ON sp.ticker = h.ticker
+    WHERE p.user_id = ?
   `;
-  const params: (string | number)[] = [];
+  const params: (string | number)[] = [auth.user.id];
 
   if (portfolioId) {
-    query += " WHERE h.portfolio_id = ?";
+    query += " AND h.portfolio_id = ?";
     params.push(Number(portfolioId));
   }
 
@@ -24,6 +30,9 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
+  const auth = requireAuth();
+  if (auth instanceof NextResponse) return auth;
+
   const body = await req.json();
   const { ticker, name, shares, avg_cost, portfolio_id } = body;
 
@@ -31,12 +40,18 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
   }
 
-  const pid = portfolio_id || 1;
   const db = getDb();
+
+  const portfolio = db.prepare("SELECT id FROM portfolios WHERE id = ? AND user_id = ?").get(
+    portfolio_id, auth.user.id
+  );
+  if (!portfolio) {
+    return NextResponse.json({ error: "Portfolio not found" }, { status: 404 });
+  }
 
   const existing = db.prepare(
     "SELECT * FROM holdings WHERE ticker = ? AND portfolio_id = ?"
-  ).get(ticker, pid) as Record<string, number> | undefined;
+  ).get(ticker, portfolio_id) as Record<string, number> | undefined;
 
   if (existing) {
     const totalShares = existing.shares + shares;
@@ -46,7 +61,7 @@ export async function POST(req: NextRequest) {
   } else {
     db.prepare(
       "INSERT INTO holdings (ticker, name, shares, avg_cost, portfolio_id) VALUES (?, ?, ?, ?, ?)"
-    ).run(ticker.toUpperCase(), name || ticker.toUpperCase(), shares, avg_cost, pid);
+    ).run(ticker.toUpperCase(), name || ticker.toUpperCase(), shares, avg_cost, portfolio_id);
   }
 
   return NextResponse.json({ success: true });

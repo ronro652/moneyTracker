@@ -1,9 +1,17 @@
+export interface User {
+  id: number;
+  email: string;
+  name: string;
+  created_at: string;
+}
+
 export interface Portfolio {
   id: number;
   name: string;
   description: string;
   color: string;
   created_at: string;
+  user_id: number;
 }
 
 export interface Holding {
