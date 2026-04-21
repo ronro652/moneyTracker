@@ -55,6 +55,11 @@ export function getSessionUser(): { id: number; email: string; name: string } | 
   `).get(token) as { id: number; email: string; name: string } | undefined;
 
   if (!row) return null;
+
+  const newExpiry = new Date(Date.now() + SESSION_MAX_AGE_DAYS * 24 * 60 * 60 * 1000).toISOString();
+  db.prepare("UPDATE sessions SET expires_at = ? WHERE id = ?").run(newExpiry, token);
+  setSessionCookie(token);
+
   return row;
 }
 
