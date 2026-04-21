@@ -4,6 +4,7 @@ import { useState, useCallback, useEffect } from "react";
 
 interface Props {
   onAdded: () => void;
+  portfolioId: number;
   open?: boolean;
   onClose?: () => void;
 }
@@ -13,7 +14,7 @@ interface SearchResult {
   name: string;
 }
 
-export default function AddStockForm({ onAdded, open, onClose }: Props) {
+export default function AddStockForm({ onAdded, portfolioId, open, onClose }: Props) {
   const [ticker, setTicker] = useState("");
   const [name, setName] = useState("");
   const [shares, setShares] = useState("");
@@ -21,9 +22,7 @@ export default function AddStockForm({ onAdded, open, onClose }: Props) {
   const [loading, setLoading] = useState(false);
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
   const [showSearch, setShowSearch] = useState(false);
-  const [searchTimeout, setSearchTimeout] = useState<NodeJS.Timeout | null>(
-    null
-  );
+  const [searchTimeout, setSearchTimeout] = useState<NodeJS.Timeout | null>(null);
 
   const isBottomSheet = open !== undefined;
 
@@ -49,9 +48,7 @@ export default function AddStockForm({ onAdded, open, onClose }: Props) {
       }
 
       const timeout = setTimeout(async () => {
-        const res = await fetch(
-          `/api/search?q=${encodeURIComponent(query)}`
-        );
+        const res = await fetch(`/api/search?q=${encodeURIComponent(query)}`);
         const results = await res.json();
         setSearchResults(results);
         setShowSearch(results.length > 0);
@@ -88,6 +85,7 @@ export default function AddStockForm({ onAdded, open, onClose }: Props) {
         name: name || ticker.toUpperCase(),
         shares: parseFloat(shares),
         avg_cost: parseFloat(avgCost),
+        portfolio_id: portfolioId,
       }),
     });
 
@@ -190,17 +188,12 @@ export default function AddStockForm({ onAdded, open, onClose }: Props) {
   if (isBottomSheet) {
     return (
       <>
-        {/* Backdrop */}
         <div
           className={`fixed inset-0 z-40 bg-black/60 transition-opacity duration-300 ${
-            open
-              ? "opacity-100"
-              : "opacity-0 pointer-events-none"
+            open ? "opacity-100" : "opacity-0 pointer-events-none"
           }`}
           onClick={onClose}
         />
-
-        {/* Bottom sheet */}
         <div
           className={`fixed inset-x-0 bottom-0 z-50 bg-gray-900 border-t border-gray-700 rounded-t-2xl transition-transform duration-300 ease-out ${
             open ? "translate-y-0" : "translate-y-full"

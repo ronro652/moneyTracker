@@ -121,7 +121,7 @@ export default function Dashboard() {
 
         {/* Desktop inline form */}
         <div className="hidden md:block">
-          <AddStockForm onAdded={handleAdded} />
+          <AddStockForm onAdded={handleAdded} portfolioId={1} />
         </div>
 
         <PortfolioChart snapshots={snapshots} />
@@ -159,6 +159,7 @@ export default function Dashboard() {
       <div className="md:hidden">
         <AddStockForm
           onAdded={handleAdded}
+          portfolioId={1}
           open={showAddSheet}
           onClose={() => setShowAddSheet(false)}
         />
