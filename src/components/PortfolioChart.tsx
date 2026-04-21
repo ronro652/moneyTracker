@@ -8,14 +8,16 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip,
+  ReferenceDot,
 } from "recharts";
-import { PortfolioSnapshot } from "@/types";
+import { PortfolioSnapshot, Transaction } from "@/types";
 
 interface Props {
   snapshots: PortfolioSnapshot[];
+  transactions?: Transaction[];
 }
 
-export default function PortfolioChart({ snapshots }: Props) {
+export default function PortfolioChart({ snapshots, transactions = [] }: Props) {
   if (snapshots.length === 0) {
     return (
       <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
@@ -32,6 +34,24 @@ export default function PortfolioChart({ snapshots }: Props) {
     value: s.total_value,
     cost: s.total_cost,
   }));
+
+  const txByDate = new Map<string, { buys: number; sells: number }>();
+  for (const t of transactions) {
+    const date = t.created_at.split("T")[0];
+    const entry = txByDate.get(date) || { buys: 0, sells: 0 };
+    if (t.type === "buy") entry.buys += t.total_amount;
+    else entry.sells += t.total_amount;
+    txByDate.set(date, entry);
+  }
+
+  const buyMarkers: { date: string; value: number }[] = [];
+  const sellMarkers: { date: string; value: number }[] = [];
+
+  for (const d of data) {
+    const tx = txByDate.get(d.date);
+    if (tx?.buys) buyMarkers.push({ date: d.date, value: d.value });
+    if (tx?.sells) sellMarkers.push({ date: d.date, value: d.value });
+  }
 
   const fmt = (n: number) =>
     new Intl.NumberFormat("en-US", {
@@ -102,10 +122,32 @@ export default function PortfolioChart({ snapshots }: Props) {
             strokeWidth={2}
             name="Market Value"
           />
+          {buyMarkers.map((m, i) => (
+            <ReferenceDot
+              key={`buy-${i}`}
+              x={m.date}
+              y={m.value}
+              r={5}
+              fill="#10b981"
+              stroke="#fff"
+              strokeWidth={2}
+            />
+          ))}
+          {sellMarkers.map((m, i) => (
+            <ReferenceDot
+              key={`sell-${i}`}
+              x={m.date}
+              y={m.value}
+              r={5}
+              fill="#ef4444"
+              stroke="#fff"
+              strokeWidth={2}
+            />
+          ))}
         </AreaChart>
       </ResponsiveContainer>
       </div>
-      <div className="flex gap-6 mt-3 justify-center text-sm text-gray-600">
+      <div className="flex gap-4 sm:gap-6 mt-3 justify-center text-sm text-gray-600 flex-wrap">
         <span className="flex items-center gap-2">
           <span className="w-3 h-3 rounded-full bg-blue-600" />
           Market Value
@@ -114,6 +156,18 @@ export default function PortfolioChart({ snapshots }: Props) {
           <span className="w-3 h-3 rounded-full bg-blue-300" />
           Cost Basis
         </span>
+        {buyMarkers.length > 0 && (
+          <span className="flex items-center gap-2">
+            <span className="w-3 h-3 rounded-full bg-emerald-500" />
+            Buy
+          </span>
+        )}
+        {sellMarkers.length > 0 && (
+          <span className="flex items-center gap-2">
+            <span className="w-3 h-3 rounded-full bg-red-500" />
+            Sell
+          </span>
+        )}
       </div>
     </div>
   );

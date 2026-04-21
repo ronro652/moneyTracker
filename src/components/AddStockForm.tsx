@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useCallback, useEffect } from "react";
+import type { AssetType, TransactionType } from "@/types";
 
 interface Props {
   onAdded: () => void;
@@ -15,16 +16,20 @@ interface SearchResult {
 }
 
 export default function AddStockForm({ onAdded, portfolioId, open, onClose }: Props) {
+  const [assetType, setAssetType] = useState<AssetType>("stock");
+  const [transactionType, setTransactionType] = useState<TransactionType>("buy");
   const [ticker, setTicker] = useState("");
   const [name, setName] = useState("");
   const [shares, setShares] = useState("");
-  const [avgCost, setAvgCost] = useState("");
+  const [price, setPrice] = useState("");
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
   const [showSearch, setShowSearch] = useState(false);
   const [searchTimeout, setSearchTimeout] = useState<NodeJS.Timeout | null>(null);
 
   const isBottomSheet = open !== undefined;
+  const isSell = transactionType === "sell";
 
   useEffect(() => {
     if (isBottomSheet && open) {
@@ -39,6 +44,7 @@ export default function AddStockForm({ onAdded, portfolioId, open, onClose }: Pr
     (query: string) => {
       setTicker(query);
       setName("");
+      setError("");
       if (searchTimeout) clearTimeout(searchTimeout);
 
       if (query.length < 1) {
@@ -48,14 +54,15 @@ export default function AddStockForm({ onAdded, portfolioId, open, onClose }: Pr
       }
 
       const timeout = setTimeout(async () => {
-        const res = await fetch(`/api/search?q=${encodeURIComponent(query)}`);
+        const typeParam = assetType === "crypto" ? "&type=crypto" : "";
+        const res = await fetch(`/api/search?q=${encodeURIComponent(query)}${typeParam}`);
         const results = await res.json();
         setSearchResults(results);
         setShowSearch(results.length > 0);
       }, 300);
       setSearchTimeout(timeout);
     },
-    [searchTimeout]
+    [searchTimeout, assetType]
   );
 
   const selectResult = (result: SearchResult) => {
@@ -65,35 +72,58 @@ export default function AddStockForm({ onAdded, portfolioId, open, onClose }: Pr
     setSearchResults([]);
   };
 
+  const switchAssetType = (type: AssetType) => {
+    setAssetType(type);
+    setTicker("");
+    setName("");
+    setSearchResults([]);
+    setShowSearch(false);
+    setError("");
+  };
+
   const resetForm = () => {
     setTicker("");
     setName("");
     setShares("");
-    setAvgCost("");
+    setPrice("");
+    setError("");
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!ticker || !shares || !avgCost) return;
+    if (!ticker || !shares || !price) return;
 
     setLoading(true);
-    await fetch("/api/holdings", {
+    setError("");
+
+    const res = await fetch("/api/transactions", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         ticker: ticker.toUpperCase(),
         name: name || ticker.toUpperCase(),
         shares: parseFloat(shares),
-        avg_cost: parseFloat(avgCost),
+        price_per_share: parseFloat(price),
         portfolio_id: portfolioId,
+        asset_type: assetType,
+        type: transactionType,
       }),
     });
 
-    resetForm();
+    const data = await res.json();
     setLoading(false);
+
+    if (!res.ok) {
+      setError(data.error || "Something went wrong");
+      return;
+    }
+
+    resetForm();
     onAdded();
     onClose?.();
   };
+
+  const isCrypto = assetType === "crypto";
 
   const formContent = (
     <form
@@ -104,15 +134,73 @@ export default function AddStockForm({ onAdded, portfolioId, open, onClose }: Pr
           : "flex flex-wrap gap-3 items-end"
       }
     >
+      <div className={isBottomSheet ? "flex gap-2" : "w-full mb-1 flex gap-2 flex-wrap"}>
+        <div className="inline-flex rounded-lg border border-gray-300 p-0.5 bg-gray-100">
+          <button
+            type="button"
+            onClick={() => switchAssetType("stock")}
+            className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
+              !isCrypto
+                ? "bg-white text-gray-900 shadow-sm"
+                : "text-gray-500 hover:text-gray-700"
+            }`}
+          >
+            Stock
+          </button>
+          <button
+            type="button"
+            onClick={() => switchAssetType("crypto")}
+            className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
+              isCrypto
+                ? "bg-white text-gray-900 shadow-sm"
+                : "text-gray-500 hover:text-gray-700"
+            }`}
+          >
+            Crypto
+          </button>
+        </div>
+
+        <div className="inline-flex rounded-lg border border-gray-300 p-0.5 bg-gray-100">
+          <button
+            type="button"
+            onClick={() => { setTransactionType("buy"); setError(""); }}
+            className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
+              !isSell
+                ? "bg-emerald-500 text-white shadow-sm"
+                : "text-gray-500 hover:text-gray-700"
+            }`}
+          >
+            Buy
+          </button>
+          <button
+            type="button"
+            onClick={() => { setTransactionType("sell"); setError(""); }}
+            className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
+              isSell
+                ? "bg-red-500 text-white shadow-sm"
+                : "text-gray-500 hover:text-gray-700"
+            }`}
+          >
+            Sell
+          </button>
+        </div>
+      </div>
+
+      {error && (
+        <p className="text-red-500 text-sm bg-red-50 border border-red-200 rounded-lg px-3 py-2">{error}</p>
+      )}
+
       <div className={isBottomSheet ? "" : "relative flex-1 min-w-[140px]"}>
-        <label className="block text-xs text-gray-500 mb-1">Ticker</label>
+        <label className="block text-xs text-gray-500 mb-1">
+          {isCrypto ? "Coin" : "Ticker"}
+        </label>
         <div className="relative">
           <input
             type="text"
             value={ticker}
             onChange={(e) => handleSearch(e.target.value.toUpperCase())}
             onBlur={() => setTimeout(() => setShowSearch(false), 200)}
-            placeholder="AAPL"
+            placeholder={isCrypto ? "BTC" : "AAPL"}
             className="w-full bg-white border border-gray-300 rounded-lg px-3 py-3 text-gray-900 placeholder-gray-400 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
             required
             autoFocus={isBottomSheet}
@@ -144,29 +232,31 @@ export default function AddStockForm({ onAdded, portfolioId, open, onClose }: Pr
         }
       >
         <div className={isBottomSheet ? "" : "flex-1 min-w-[120px]"}>
-          <label className="block text-xs text-gray-500 mb-1">Shares</label>
+          <label className="block text-xs text-gray-500 mb-1">
+            {isCrypto ? "Amount" : "Shares"}
+          </label>
           <input
             type="number"
             step="any"
-            min="0.001"
+            min="0.000001"
             value={shares}
             onChange={(e) => setShares(e.target.value)}
-            placeholder="10"
+            placeholder={isCrypto ? "0.5" : "10"}
             className="w-full bg-white border border-gray-300 rounded-lg px-3 py-3 text-gray-900 placeholder-gray-400 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
             required
           />
         </div>
         <div className={isBottomSheet ? "" : "flex-1 min-w-[120px]"}>
           <label className="block text-xs text-gray-500 mb-1">
-            Avg Cost ($)
+            {isSell ? "Sell Price ($)" : "Buy Price ($)"}
           </label>
           <input
             type="number"
             step="any"
-            min="0.01"
-            value={avgCost}
-            onChange={(e) => setAvgCost(e.target.value)}
-            placeholder="150.00"
+            min="0.0000001"
+            value={price}
+            onChange={(e) => setPrice(e.target.value)}
+            placeholder={isCrypto ? "65000.00" : "150.00"}
             className="w-full bg-white border border-gray-300 rounded-lg px-3 py-3 text-gray-900 placeholder-gray-400 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
             required
           />
@@ -176,11 +266,19 @@ export default function AddStockForm({ onAdded, portfolioId, open, onClose }: Pr
       <button
         type="submit"
         disabled={loading}
-        className={`bg-blue-600 hover:bg-blue-500 active:bg-blue-700 disabled:bg-gray-300 text-white font-medium rounded-lg transition-colors ${
+        className={`${
+          isSell
+            ? "bg-red-500 hover:bg-red-400 active:bg-red-600"
+            : "bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700"
+        } disabled:bg-gray-300 text-white font-medium rounded-lg transition-colors ${
           isBottomSheet ? "w-full py-3.5 text-base mt-1" : "px-5 py-3 text-sm"
         }`}
       >
-        {loading ? "Adding..." : "Add Stock"}
+        {loading
+          ? (isSell ? "Selling..." : "Buying...")
+          : isSell
+            ? (isCrypto ? "Sell Coin" : "Sell Stock")
+            : (isCrypto ? "Buy Coin" : "Buy Stock")}
       </button>
     </form>
   );
@@ -205,7 +303,9 @@ export default function AddStockForm({ onAdded, portfolioId, open, onClose }: Pr
           </div>
           <div className="px-5 pb-6">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold text-gray-900">Add Stock</h2>
+              <h2 className="text-lg font-semibold text-gray-900">
+                {isSell ? "Sell Holding" : "Buy Holding"}
+              </h2>
               <button
                 onClick={onClose}
                 className="p-2 -m-2 text-gray-400 active:text-gray-700"
@@ -234,7 +334,9 @@ export default function AddStockForm({ onAdded, portfolioId, open, onClose }: Pr
 
   return (
     <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
-      <h2 className="text-lg font-semibold text-gray-900 mb-4">Add Stock</h2>
+      <h2 className="text-lg font-semibold text-gray-900 mb-4">
+        {isSell ? "Sell Holding" : "Buy Holding"}
+      </h2>
       {formContent}
     </div>
   );

@@ -73,6 +73,23 @@ function initDb(db: Database.Database) {
 
     CREATE UNIQUE INDEX IF NOT EXISTS idx_stock_prices_ticker
       ON stock_prices(ticker);
+
+    CREATE TABLE IF NOT EXISTS transactions (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      portfolio_id INTEGER NOT NULL REFERENCES portfolios(id) ON DELETE CASCADE,
+      ticker TEXT NOT NULL,
+      name TEXT NOT NULL DEFAULT '',
+      asset_type TEXT NOT NULL DEFAULT 'stock',
+      type TEXT NOT NULL CHECK(type IN ('buy', 'sell')),
+      shares REAL NOT NULL,
+      price_per_share REAL NOT NULL,
+      total_amount REAL NOT NULL,
+      realized_gain REAL,
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_transactions_portfolio
+      ON transactions(portfolio_id);
   `);
 
   migrate(db);
@@ -116,5 +133,9 @@ function migrate(db: Database.Database) {
   ).get();
   if (!compositeIdx) {
     db.exec("CREATE UNIQUE INDEX IF NOT EXISTS idx_snapshots_date_portfolio ON portfolio_snapshots(date, portfolio_id)");
+  }
+
+  if (!hasColumn(db, "holdings", "asset_type")) {
+    db.exec("ALTER TABLE holdings ADD COLUMN asset_type TEXT NOT NULL DEFAULT 'stock'");
   }
 }

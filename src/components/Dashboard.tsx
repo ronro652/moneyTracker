@@ -7,9 +7,10 @@ import HoldingsTable from "./HoldingsTable";
 import AddStockForm from "./AddStockForm";
 import PortfolioSidebar from "./PortfolioSidebar";
 import PortfolioAllocation from "./PortfolioAllocation";
+import TransactionHistory from "./TransactionHistory";
 import DashboardSettings from "./DashboardSettings";
 import { useAuth } from "./AuthProvider";
-import { Holding, Portfolio, PortfolioSnapshot, DashboardWidget, DEFAULT_WIDGETS } from "@/types";
+import { Holding, Portfolio, PortfolioSnapshot, Transaction, DashboardWidget, DEFAULT_WIDGETS } from "@/types";
 
 function loadWidgets(): DashboardWidget[] {
   if (typeof window === "undefined") return DEFAULT_WIDGETS;
@@ -34,6 +35,8 @@ export default function Dashboard() {
   const [activePortfolioId, setActivePortfolioId] = useState<number | null>(null);
   const [holdings, setHoldings] = useState<Holding[]>([]);
   const [snapshots, setSnapshots] = useState<PortfolioSnapshot[]>([]);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [ilsRate, setIlsRate] = useState<number | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [lastUpdated, setLastUpdated] = useState<string | null>(null);
   const [widgets, setWidgets] = useState<DashboardWidget[]>(DEFAULT_WIDGETS);
@@ -74,23 +77,39 @@ export default function Dashboard() {
     setSnapshots(data);
   }, [activePortfolioId]);
 
+  const fetchTransactions = useCallback(async () => {
+    const url = activePortfolioId
+      ? `/api/transactions?portfolio_id=${activePortfolioId}`
+      : "/api/transactions";
+    const res = await fetch(url);
+    const data = await res.json();
+    setTransactions(data);
+  }, [activePortfolioId]);
+
+  const fetchIlsRate = useCallback(async () => {
+    const res = await fetch("/api/exchange-rate?from=USD&to=ILS");
+    const data = await res.json();
+    if (data.rate) setIlsRate(data.rate);
+  }, []);
+
   const refreshPrices = useCallback(async () => {
     setRefreshing(true);
     await fetch("/api/prices", { method: "POST" });
-    await fetchHoldings();
-    await fetchSnapshots();
+    await Promise.all([fetchHoldings(), fetchSnapshots(), fetchTransactions()]);
     setLastUpdated(new Date().toLocaleTimeString());
     setRefreshing(false);
-  }, [fetchHoldings, fetchSnapshots]);
+  }, [fetchHoldings, fetchSnapshots, fetchTransactions]);
 
   useEffect(() => {
     fetchPortfolios();
-  }, [fetchPortfolios]);
+    fetchIlsRate();
+  }, [fetchPortfolios, fetchIlsRate]);
 
   useEffect(() => {
     fetchHoldings();
     fetchSnapshots();
-  }, [fetchHoldings, fetchSnapshots]);
+    fetchTransactions();
+  }, [fetchHoldings, fetchSnapshots, fetchTransactions]);
 
   const handleDelete = async (id: number) => {
     await fetch(`/api/holdings/${id}`, { method: "DELETE" });
@@ -98,7 +117,7 @@ export default function Dashboard() {
   };
 
   const handleAdded = async () => {
-    await fetchHoldings();
+    await Promise.all([fetchHoldings(), fetchTransactions()]);
     await refreshPrices();
   };
 
@@ -106,6 +125,7 @@ export default function Dashboard() {
     fetchPortfolios();
     fetchHoldings();
     fetchSnapshots();
+    fetchTransactions();
   };
 
   const activePortfolio = portfolios.find((p) => p.id === activePortfolioId);
@@ -118,7 +138,7 @@ export default function Dashboard() {
   const renderWidget = (widget: DashboardWidget) => {
     switch (widget.type) {
       case "summary":
-        return <SummaryCards key={widget.id} holdings={holdings} />;
+        return <SummaryCards key={widget.id} holdings={holdings} transactions={transactions} ilsRate={ilsRate} />;
       case "add-stock":
         return (
           <div key={widget.id} className="hidden md:block">
@@ -126,7 +146,7 @@ export default function Dashboard() {
           </div>
         );
       case "chart":
-        return <PortfolioChart key={widget.id} snapshots={snapshots} />;
+        return <PortfolioChart key={widget.id} snapshots={snapshots} transactions={transactions} />;
       case "allocation":
         return (
           <PortfolioAllocation
@@ -138,6 +158,8 @@ export default function Dashboard() {
         );
       case "holdings":
         return <HoldingsTable key={widget.id} holdings={holdings} onDelete={handleDelete} />;
+      case "transactions":
+        return <TransactionHistory key={widget.id} transactions={transactions} />;
       default:
         return null;
     }
@@ -160,6 +182,7 @@ export default function Dashboard() {
               <h1 className="text-lg sm:text-xl font-bold text-gray-900">Money Tracker</h1>
               <p className="text-xs text-gray-400">
                 {activePortfolio ? activePortfolio.name : "All Portfolios"}
+                {ilsRate && <span className="ml-2">USD/ILS {ilsRate.toFixed(2)}</span>}
               </p>
             </div>
           </div>

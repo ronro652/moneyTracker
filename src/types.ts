@@ -14,6 +14,8 @@ export interface Portfolio {
   user_id: number;
 }
 
+export type AssetType = "stock" | "crypto";
+
 export interface Holding {
   id: number;
   ticker: string;
@@ -22,6 +24,7 @@ export interface Holding {
   avg_cost: number;
   current_price: number | null;
   change_percent: number | null;
+  asset_type: AssetType;
   created_at: string;
   portfolio_id: number;
 }
@@ -33,12 +36,28 @@ export interface PortfolioSnapshot {
   portfolio_id: number;
 }
 
+export type TransactionType = "buy" | "sell";
+
+export interface Transaction {
+  id: number;
+  portfolio_id: number;
+  ticker: string;
+  name: string;
+  asset_type: AssetType;
+  type: TransactionType;
+  shares: number;
+  price_per_share: number;
+  total_amount: number;
+  realized_gain: number | null;
+  created_at: string;
+}
+
 export interface PriceData {
   price: number;
   changePercent: number;
 }
 
-export type WidgetType = "summary" | "chart" | "holdings" | "add-stock" | "allocation";
+export type WidgetType = "summary" | "chart" | "holdings" | "add-stock" | "allocation" | "transactions";
 
 export interface DashboardWidget {
   id: string;
@@ -58,6 +77,7 @@ export const DEFAULT_WIDGETS: DashboardWidget[] = [
   { id: "chart", type: "chart", label: "Performance Chart", visible: true, order: 2 },
   { id: "allocation", type: "allocation", label: "Portfolio Allocation", visible: true, order: 3 },
   { id: "holdings", type: "holdings", label: "Holdings Table", visible: true, order: 4 },
+  { id: "transactions", type: "transactions", label: "Transaction History", visible: true, order: 5 },
 ];
 
 export const PORTFOLIO_COLORS = [
