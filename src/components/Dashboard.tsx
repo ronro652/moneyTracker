@@ -142,32 +142,32 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-950 text-gray-100">
-      <header className="border-b border-gray-800 bg-gray-900/80 backdrop-blur-md sticky top-0 z-10">
+    <div className="min-h-screen bg-slate-50 text-gray-800">
+      <header className="border-b border-gray-200 bg-white/80 backdrop-blur-md sticky top-0 z-10">
         <div className="max-w-[1400px] mx-auto px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <button
               onClick={() => setSidebarOpen(!sidebarOpen)}
-              className="lg:hidden p-2 -ml-2 text-gray-400 hover:text-white transition-colors"
+              className="lg:hidden p-2 -ml-2 text-gray-500 hover:text-gray-900 transition-colors"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
               </svg>
             </button>
             <div>
-              <h1 className="text-lg sm:text-xl font-bold text-white">Money Tracker</h1>
-              <p className="text-xs text-gray-500">
+              <h1 className="text-lg sm:text-xl font-bold text-gray-900">Money Tracker</h1>
+              <p className="text-xs text-gray-400">
                 {activePortfolio ? activePortfolio.name : "All Portfolios"}
               </p>
             </div>
           </div>
           <div className="flex items-center gap-2 sm:gap-3">
             {lastUpdated && (
-              <span className="text-xs text-gray-500 hidden sm:inline">Updated {lastUpdated}</span>
+              <span className="text-xs text-gray-400 hidden sm:inline">Updated {lastUpdated}</span>
             )}
             <button
               onClick={() => setShowSettings(true)}
-              className="p-2 text-gray-400 hover:text-white transition-colors"
+              className="p-2 text-gray-400 hover:text-gray-700 transition-colors"
               title="Dashboard settings"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -178,7 +178,7 @@ export default function Dashboard() {
             <button
               onClick={refreshPrices}
               disabled={refreshing}
-              className="bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 disabled:bg-gray-700 text-white text-sm font-medium px-3 sm:px-4 py-2 rounded-lg transition-colors flex items-center gap-2"
+              className="bg-blue-600 hover:bg-blue-500 active:bg-blue-700 disabled:bg-gray-300 text-white text-sm font-medium px-3 sm:px-4 py-2 rounded-lg transition-colors flex items-center gap-2"
             >
               {refreshing ? (
                 <>
@@ -204,9 +204,9 @@ export default function Dashboard() {
       {/* Mobile sidebar overlay */}
       {sidebarOpen && (
         <div className="fixed inset-0 z-30 lg:hidden" onClick={() => setSidebarOpen(false)}>
-          <div className="absolute inset-0 bg-black/60" />
+          <div className="absolute inset-0 bg-black/20" />
           <div
-            className="absolute left-0 top-0 bottom-0 w-72 bg-gray-900 border-r border-gray-800 p-4 pt-20 overflow-y-auto"
+            className="absolute left-0 top-0 bottom-0 w-72 bg-white border-r border-gray-200 p-4 pt-20 overflow-y-auto shadow-xl"
             onClick={(e) => e.stopPropagation()}
           >
             <PortfolioSidebar
@@ -242,7 +242,7 @@ export default function Dashboard() {
             {visibleWidgets.map(renderWidget)}
 
             {lastUpdated && (
-              <p className="text-xs text-gray-500 text-center sm:hidden">
+              <p className="text-xs text-gray-400 text-center sm:hidden">
                 Updated {lastUpdated}
               </p>
             )}
@@ -253,7 +253,7 @@ export default function Dashboard() {
       {/* Mobile FAB */}
       <button
         onClick={() => setShowAddSheet(true)}
-        className="md:hidden fixed right-4 bottom-6 z-30 w-14 h-14 bg-emerald-600 active:bg-emerald-700 text-white rounded-full shadow-lg shadow-emerald-900/40 flex items-center justify-center"
+        className="md:hidden fixed right-4 bottom-6 z-30 w-14 h-14 bg-blue-600 active:bg-blue-700 text-white rounded-full shadow-lg shadow-blue-600/25 flex items-center justify-center"
         style={{ bottom: "calc(1.5rem + env(safe-area-inset-bottom))" }}
       >
         <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
