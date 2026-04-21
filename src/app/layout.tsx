@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 
-const inter = Inter({
+const plusJakarta = Plus_Jakarta_Sans({
   subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
 });
 
 export const metadata: Metadata = {
@@ -11,7 +12,7 @@ export const metadata: Metadata = {
   description: "Track your stock portfolio and monitor performance",
   appleWebApp: {
     capable: true,
-    statusBarStyle: "black-translucent",
+    statusBarStyle: "default",
     title: "Money Tracker",
   },
   other: {
@@ -25,12 +26,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={inter.className}>
+    <html lang="en" className={plusJakarta.className}>
       <head>
-        <meta name="theme-color" content="#030712" />
+        <meta name="theme-color" content="#ffffff" />
         <link rel="apple-touch-icon" href="/icon-192.svg" />
       </head>
-      <body className="min-h-screen bg-gray-950 antialiased">
+      <body className="min-h-screen bg-slate-50 antialiased">
         {children}
       </body>
     </html>

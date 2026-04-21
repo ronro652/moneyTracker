@@ -13,8 +13,8 @@ html {
 }
 
 body {
-  background: #030712;
-  color: #f3f4f6;
+  background: #f8fafc;
+  color: #1e293b;
   overscroll-behavior-y: contain;
   padding-top: env(safe-area-inset-top);
   padding-bottom: env(safe-area-inset-bottom);
