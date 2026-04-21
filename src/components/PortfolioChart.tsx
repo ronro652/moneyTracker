@@ -37,11 +37,13 @@ export default function PortfolioChart({ snapshots, transactions = [] }: Props) 
 
   const txByDate = new Map<string, { buys: number; sells: number }>();
   for (const t of transactions) {
-    const date = t.created_at.split("T")[0];
-    const entry = txByDate.get(date) || { buys: 0, sells: 0 };
+    const txDate = new Date(t.created_at + "Z");
+    const bucket = Math.floor(txDate.getUTCHours() / 6) * 6;
+    const key = `${txDate.toISOString().split("T")[0]} ${String(bucket).padStart(2, "0")}:00`;
+    const entry = txByDate.get(key) || { buys: 0, sells: 0 };
     if (t.type === "buy") entry.buys += t.total_amount;
     else entry.sells += t.total_amount;
-    txByDate.set(date, entry);
+    txByDate.set(key, entry);
   }
 
   const buyMarkers: { date: string; value: number }[] = [];
@@ -83,8 +85,14 @@ export default function PortfolioChart({ snapshots, transactions = [] }: Props) 
             stroke="#9ca3af"
             tick={{ fontSize: 11, fill: "#6b7280" }}
             tickFormatter={(d: string) => {
-              const date = new Date(d + "T00:00:00");
-              return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+              const hasTime = d.includes(" ");
+              const date = hasTime ? new Date(d.replace(" ", "T") + ":00Z") : new Date(d + "T00:00:00");
+              const day = date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+              if (hasTime) {
+                const h = date.getUTCHours();
+                return `${day} ${h}:00`;
+              }
+              return day;
             }}
           />
           <YAxis stroke="#9ca3af" tick={{ fontSize: 11, fill: "#6b7280" }} tickFormatter={fmt} width={65} />
@@ -98,12 +106,18 @@ export default function PortfolioChart({ snapshots, transactions = [] }: Props) 
             }}
             formatter={(value) => [fmt(Number(value))]}
             labelFormatter={(label) => {
-              const date = new Date(String(label) + "T00:00:00");
-              return date.toLocaleDateString("en-US", {
+              const s = String(label);
+              const hasTime = s.includes(" ");
+              const date = hasTime ? new Date(s.replace(" ", "T") + ":00Z") : new Date(s + "T00:00:00");
+              const dayStr = date.toLocaleDateString("en-US", {
                 month: "long",
                 day: "numeric",
                 year: "numeric",
               });
+              if (hasTime) {
+                return `${dayStr} ${date.getUTCHours()}:00`;
+              }
+              return dayStr;
             }}
           />
           <Area

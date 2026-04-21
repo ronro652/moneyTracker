@@ -1,6 +1,6 @@
 import { getDb } from "@/lib/db";
 import { requireAuth } from "@/lib/require-auth";
-import { fetchStockQuote } from "@/lib/alpha-vantage";
+import { fetchStockQuote, fetchCryptoQuote } from "@/lib/alpha-vantage";
 import { NextResponse } from "next/server";
 
 export async function POST() {
@@ -9,14 +9,16 @@ export async function POST() {
 
   const db = getDb();
   const holdings = db.prepare(`
-    SELECT DISTINCT h.ticker FROM holdings h
+    SELECT DISTINCT h.ticker, h.asset_type FROM holdings h
     JOIN portfolios p ON p.id = h.portfolio_id
     WHERE p.user_id = ?
-  `).all(auth.user.id) as { ticker: string }[];
+  `).all(auth.user.id) as { ticker: string; asset_type: string }[];
 
   const results: Record<string, { price: number; changePercent: number }> = {};
 
-  for (const { ticker } of holdings) {
+  for (const { ticker, asset_type } of holdings) {
+    if (results[ticker]) continue;
+
     const cached = db.prepare(
       "SELECT * FROM stock_prices WHERE ticker = ? AND updated_at > datetime('now', '-15 minutes')"
     ).get(ticker) as { price: number; change_percent: number } | undefined;
@@ -26,7 +28,10 @@ export async function POST() {
       continue;
     }
 
-    const quote = await fetchStockQuote(ticker);
+    const quote = asset_type === "crypto"
+      ? await fetchCryptoQuote(ticker)
+      : await fetchStockQuote(ticker);
+
     if (quote) {
       db.prepare(`
         INSERT INTO stock_prices (ticker, price, change_percent, updated_at)
@@ -42,7 +47,9 @@ export async function POST() {
   }
 
   const portfolios = db.prepare("SELECT id FROM portfolios WHERE user_id = ?").all(auth.user.id) as { id: number }[];
-  const today = new Date().toISOString().split("T")[0];
+  const now = new Date();
+  const bucket = Math.floor(now.getUTCHours() / 6) * 6;
+  const snapshotKey = `${now.toISOString().split("T")[0]} ${String(bucket).padStart(2, "0")}:00`;
 
   for (const { id: pid } of portfolios) {
     const portfolioHoldings = db.prepare("SELECT ticker, shares, avg_cost FROM holdings WHERE portfolio_id = ?").all(pid) as {
@@ -63,7 +70,7 @@ export async function POST() {
         INSERT INTO portfolio_snapshots (date, total_value, total_cost, portfolio_id)
         VALUES (?, ?, ?, ?)
         ON CONFLICT(date, portfolio_id) DO UPDATE SET total_value = excluded.total_value, total_cost = excluded.total_cost
-      `).run(today, totalValue, totalCost, pid);
+      `).run(snapshotKey, totalValue, totalCost, pid);
     }
   }
 

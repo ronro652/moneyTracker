@@ -18,7 +18,7 @@ export async function GET(req: NextRequest) {
     }
 
     const snapshots = db.prepare(
-      "SELECT date, total_value, total_cost, portfolio_id FROM portfolio_snapshots WHERE portfolio_id = ? ORDER BY date ASC LIMIT 365"
+      "SELECT date, total_value, total_cost, portfolio_id FROM portfolio_snapshots WHERE portfolio_id = ? ORDER BY date ASC LIMIT 1460"
     ).all(Number(portfolioId));
     return NextResponse.json(snapshots);
   }
@@ -30,7 +30,7 @@ export async function GET(req: NextRequest) {
     WHERE p.user_id = ?
     GROUP BY ps.date
     ORDER BY ps.date ASC
-    LIMIT 365
+    LIMIT 1460
   `).all(auth.user.id);
   return NextResponse.json(snapshots);
 }
