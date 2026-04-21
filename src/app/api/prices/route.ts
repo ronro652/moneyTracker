@@ -33,20 +33,31 @@ export async function POST() {
     }
   }
 
-  const totalValue = holdings.reduce((sum, { ticker }) => {
-    const holding = db.prepare("SELECT shares FROM holdings WHERE ticker = ?").get(ticker) as { shares: number } | undefined;
-    const price = results[ticker]?.price || 0;
-    return sum + (holding?.shares || 0) * price;
-  }, 0);
-
-  const totalCost = (db.prepare("SELECT SUM(shares * avg_cost) as total FROM holdings").get() as { total: number })?.total || 0;
-
+  const portfolios = db.prepare("SELECT id FROM portfolios").all() as { id: number }[];
   const today = new Date().toISOString().split("T")[0];
-  db.prepare(`
-    INSERT INTO portfolio_snapshots (date, total_value, total_cost)
-    VALUES (?, ?, ?)
-    ON CONFLICT(date) DO UPDATE SET total_value = excluded.total_value, total_cost = excluded.total_cost
-  `).run(today, totalValue, totalCost);
+
+  for (const { id: pid } of portfolios) {
+    const portfolioHoldings = db.prepare("SELECT ticker, shares, avg_cost FROM holdings WHERE portfolio_id = ?").all(pid) as {
+      ticker: string;
+      shares: number;
+      avg_cost: number;
+    }[];
+
+    const totalValue = portfolioHoldings.reduce((sum, h) => {
+      const price = results[h.ticker]?.price || 0;
+      return sum + h.shares * price;
+    }, 0);
+
+    const totalCost = portfolioHoldings.reduce((sum, h) => sum + h.shares * h.avg_cost, 0);
+
+    if (portfolioHoldings.length > 0) {
+      db.prepare(`
+        INSERT INTO portfolio_snapshots (date, total_value, total_cost, portfolio_id)
+        VALUES (?, ?, ?, ?)
+        ON CONFLICT(date, portfolio_id) DO UPDATE SET total_value = excluded.total_value, total_cost = excluded.total_cost
+      `).run(today, totalValue, totalCost, pid);
+    }
+  }
 
   return NextResponse.json({ prices: results });
 }

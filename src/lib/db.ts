@@ -15,8 +15,21 @@ export function getDb(): Database.Database {
   return db;
 }
 
+function hasColumn(db: Database.Database, table: string, column: string): boolean {
+  const cols = db.prepare(`PRAGMA table_info(${table})`).all() as { name: string }[];
+  return cols.some((c) => c.name === column);
+}
+
 function initDb(db: Database.Database) {
   db.exec(`
+    CREATE TABLE IF NOT EXISTS portfolios (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL,
+      description TEXT NOT NULL DEFAULT '',
+      color TEXT NOT NULL DEFAULT '#10b981',
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+
     CREATE TABLE IF NOT EXISTS holdings (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       ticker TEXT NOT NULL,
@@ -28,7 +41,7 @@ function initDb(db: Database.Database) {
 
     CREATE TABLE IF NOT EXISTS portfolio_snapshots (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
-      date TEXT NOT NULL UNIQUE,
+      date TEXT NOT NULL,
       total_value REAL NOT NULL,
       total_cost REAL NOT NULL
     );
@@ -44,4 +57,48 @@ function initDb(db: Database.Database) {
     CREATE UNIQUE INDEX IF NOT EXISTS idx_stock_prices_ticker
       ON stock_prices(ticker);
   `);
+
+  migrate(db);
+}
+
+function migrate(db: Database.Database) {
+  const defaultPortfolio = db.prepare("SELECT id FROM portfolios WHERE id = 1").get();
+  if (!defaultPortfolio) {
+    db.prepare("INSERT INTO portfolios (id, name, description, color) VALUES (1, 'My Portfolio', 'Default portfolio', '#10b981')").run();
+  }
+
+  if (!hasColumn(db, "holdings", "portfolio_id")) {
+    db.exec("ALTER TABLE holdings ADD COLUMN portfolio_id INTEGER NOT NULL DEFAULT 1 REFERENCES portfolios(id)");
+  }
+
+  if (!hasColumn(db, "portfolio_snapshots", "portfolio_id")) {
+    db.exec("ALTER TABLE portfolio_snapshots ADD COLUMN portfolio_id INTEGER NOT NULL DEFAULT 1 REFERENCES portfolios(id)");
+
+    const hasOldIndex = db.prepare(
+      "SELECT name FROM sqlite_master WHERE type='index' AND name='sqlite_autoindex_portfolio_snapshots_1'"
+    ).get();
+
+    if (hasOldIndex) {
+      db.exec(`
+        CREATE TABLE portfolio_snapshots_new (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          date TEXT NOT NULL,
+          total_value REAL NOT NULL,
+          total_cost REAL NOT NULL,
+          portfolio_id INTEGER NOT NULL DEFAULT 1 REFERENCES portfolios(id)
+        );
+        INSERT INTO portfolio_snapshots_new (id, date, total_value, total_cost, portfolio_id)
+          SELECT id, date, total_value, total_cost, portfolio_id FROM portfolio_snapshots;
+        DROP TABLE portfolio_snapshots;
+        ALTER TABLE portfolio_snapshots_new RENAME TO portfolio_snapshots;
+      `);
+    }
+  }
+
+  const compositeIdx = db.prepare(
+    "SELECT name FROM sqlite_master WHERE type='index' AND name='idx_snapshots_date_portfolio'"
+  ).get();
+  if (!compositeIdx) {
+    db.exec("CREATE UNIQUE INDEX IF NOT EXISTS idx_snapshots_date_portfolio ON portfolio_snapshots(date, portfolio_id)");
+  }
 }
