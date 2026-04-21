@@ -105,7 +105,7 @@ export default function AddStockForm({ onAdded, portfolioId, open, onClose }: Pr
       }
     >
       <div className={isBottomSheet ? "" : "relative flex-1 min-w-[140px]"}>
-        <label className="block text-xs text-gray-400 mb-1">Ticker</label>
+        <label className="block text-xs text-gray-500 mb-1">Ticker</label>
         <div className="relative">
           <input
             type="text"
@@ -113,28 +113,28 @@ export default function AddStockForm({ onAdded, portfolioId, open, onClose }: Pr
             onChange={(e) => handleSearch(e.target.value.toUpperCase())}
             onBlur={() => setTimeout(() => setShowSearch(false), 200)}
             placeholder="AAPL"
-            className="w-full bg-gray-700/50 border border-gray-600 rounded-lg px-3 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
+            className="w-full bg-white border border-gray-300 rounded-lg px-3 py-3 text-gray-900 placeholder-gray-400 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
             required
             autoFocus={isBottomSheet}
           />
           {showSearch && (
-            <div className="absolute z-10 top-full mt-1 w-full bg-gray-800 border border-gray-600 rounded-lg shadow-xl max-h-48 overflow-auto">
+            <div className="absolute z-10 top-full mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg max-h-48 overflow-auto">
               {searchResults.map((r) => (
                 <button
                   key={r.ticker}
                   type="button"
                   onClick={() => selectResult(r)}
-                  className="w-full text-left px-3 py-3 active:bg-gray-700 text-sm"
+                  className="w-full text-left px-3 py-3 hover:bg-blue-50 text-sm"
                 >
-                  <span className="font-bold text-white">{r.ticker}</span>{" "}
-                  <span className="text-gray-400 truncate">{r.name}</span>
+                  <span className="font-bold text-gray-900">{r.ticker}</span>{" "}
+                  <span className="text-gray-500 truncate">{r.name}</span>
                 </button>
               ))}
             </div>
           )}
         </div>
         {name && (
-          <p className="text-xs text-gray-400 mt-1">Selected: {name}</p>
+          <p className="text-xs text-gray-500 mt-1">Selected: {name}</p>
         )}
       </div>
 
@@ -144,7 +144,7 @@ export default function AddStockForm({ onAdded, portfolioId, open, onClose }: Pr
         }
       >
         <div className={isBottomSheet ? "" : "flex-1 min-w-[120px]"}>
-          <label className="block text-xs text-gray-400 mb-1">Shares</label>
+          <label className="block text-xs text-gray-500 mb-1">Shares</label>
           <input
             type="number"
             step="any"
@@ -152,12 +152,12 @@ export default function AddStockForm({ onAdded, portfolioId, open, onClose }: Pr
             value={shares}
             onChange={(e) => setShares(e.target.value)}
             placeholder="10"
-            className="w-full bg-gray-700/50 border border-gray-600 rounded-lg px-3 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
+            className="w-full bg-white border border-gray-300 rounded-lg px-3 py-3 text-gray-900 placeholder-gray-400 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
             required
           />
         </div>
         <div className={isBottomSheet ? "" : "flex-1 min-w-[120px]"}>
-          <label className="block text-xs text-gray-400 mb-1">
+          <label className="block text-xs text-gray-500 mb-1">
             Avg Cost ($)
           </label>
           <input
@@ -167,7 +167,7 @@ export default function AddStockForm({ onAdded, portfolioId, open, onClose }: Pr
             value={avgCost}
             onChange={(e) => setAvgCost(e.target.value)}
             placeholder="150.00"
-            className="w-full bg-gray-700/50 border border-gray-600 rounded-lg px-3 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
+            className="w-full bg-white border border-gray-300 rounded-lg px-3 py-3 text-gray-900 placeholder-gray-400 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
             required
           />
         </div>
@@ -176,7 +176,7 @@ export default function AddStockForm({ onAdded, portfolioId, open, onClose }: Pr
       <button
         type="submit"
         disabled={loading}
-        className={`bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 disabled:bg-gray-600 text-white font-medium rounded-lg transition-colors ${
+        className={`bg-blue-600 hover:bg-blue-500 active:bg-blue-700 disabled:bg-gray-300 text-white font-medium rounded-lg transition-colors ${
           isBottomSheet ? "w-full py-3.5 text-base mt-1" : "px-5 py-3 text-sm"
         }`}
       >
@@ -189,26 +189,26 @@ export default function AddStockForm({ onAdded, portfolioId, open, onClose }: Pr
     return (
       <>
         <div
-          className={`fixed inset-0 z-40 bg-black/60 transition-opacity duration-300 ${
+          className={`fixed inset-0 z-40 bg-black/20 transition-opacity duration-300 ${
             open ? "opacity-100" : "opacity-0 pointer-events-none"
           }`}
           onClick={onClose}
         />
         <div
-          className={`fixed inset-x-0 bottom-0 z-50 bg-gray-900 border-t border-gray-700 rounded-t-2xl transition-transform duration-300 ease-out ${
+          className={`fixed inset-x-0 bottom-0 z-50 bg-white border-t border-gray-200 rounded-t-2xl shadow-xl transition-transform duration-300 ease-out ${
             open ? "translate-y-0" : "translate-y-full"
           }`}
           style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
         >
           <div className="flex justify-center pt-3 pb-2">
-            <div className="w-10 h-1 rounded-full bg-gray-600" />
+            <div className="w-10 h-1 rounded-full bg-gray-300" />
           </div>
           <div className="px-5 pb-6">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold text-white">Add Stock</h2>
+              <h2 className="text-lg font-semibold text-gray-900">Add Stock</h2>
               <button
                 onClick={onClose}
-                className="p-2 -m-2 text-gray-400 active:text-white"
+                className="p-2 -m-2 text-gray-400 active:text-gray-700"
               >
                 <svg
                   className="w-5 h-5"
@@ -233,8 +233,8 @@ export default function AddStockForm({ onAdded, portfolioId, open, onClose }: Pr
   }
 
   return (
-    <div className="bg-gray-800/50 border border-gray-700/50 rounded-xl p-6 backdrop-blur-sm">
-      <h2 className="text-lg font-semibold text-white mb-4">Add Stock</h2>
+    <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
+      <h2 className="text-lg font-semibold text-gray-900 mb-4">Add Stock</h2>
       {formContent}
     </div>
   );

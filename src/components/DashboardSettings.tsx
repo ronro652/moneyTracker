@@ -50,11 +50,11 @@ export default function DashboardSettings({ widgets, onChange, open, onClose }: 
 
   return (
     <>
-      <div className="fixed inset-0 z-40 bg-black/60" onClick={onClose} />
-      <div className="fixed right-4 top-20 z-50 w-80 bg-gray-900 border border-gray-700 rounded-xl shadow-2xl">
-        <div className="flex items-center justify-between p-4 border-b border-gray-700">
-          <h3 className="text-sm font-semibold text-white">Dashboard Layout</h3>
-          <button onClick={onClose} className="p-1 text-gray-400 hover:text-white transition-colors">
+      <div className="fixed inset-0 z-40 bg-black/20" onClick={onClose} />
+      <div className="fixed right-4 top-20 z-50 w-80 bg-white border border-gray-200 rounded-xl shadow-xl">
+        <div className="flex items-center justify-between p-4 border-b border-gray-200">
+          <h3 className="text-sm font-semibold text-gray-900">Dashboard Layout</h3>
+          <button onClick={onClose} className="p-1 text-gray-400 hover:text-gray-700 transition-colors">
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
@@ -64,14 +64,14 @@ export default function DashboardSettings({ widgets, onChange, open, onClose }: 
           {sorted.map((widget, idx) => (
             <div
               key={widget.id}
-              className="flex items-center gap-2 px-3 py-2.5 rounded-lg bg-gray-800/50 border border-gray-700/50"
+              className="flex items-center gap-2 px-3 py-2.5 rounded-lg bg-gray-50 border border-gray-200"
             >
               <button
                 onClick={() => toggleVisibility(widget.id)}
                 className={`flex-shrink-0 w-5 h-5 rounded border transition-colors ${
                   widget.visible
-                    ? "bg-emerald-600 border-emerald-500"
-                    : "border-gray-600 hover:border-gray-400"
+                    ? "bg-blue-600 border-blue-500"
+                    : "border-gray-300 hover:border-gray-400"
                 }`}
               >
                 {widget.visible && (
@@ -80,14 +80,14 @@ export default function DashboardSettings({ widgets, onChange, open, onClose }: 
                   </svg>
                 )}
               </button>
-              <span className={`flex-1 text-sm ${widget.visible ? "text-gray-200" : "text-gray-500"}`}>
+              <span className={`flex-1 text-sm ${widget.visible ? "text-gray-700" : "text-gray-400"}`}>
                 {widget.label}
               </span>
               <div className="flex flex-col">
                 <button
                   onClick={() => moveUp(widget.id)}
                   disabled={idx === 0}
-                  className="text-gray-500 hover:text-gray-300 disabled:opacity-20 transition-colors p-0.5"
+                  className="text-gray-400 hover:text-gray-600 disabled:opacity-20 transition-colors p-0.5"
                 >
                   <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
@@ -96,7 +96,7 @@ export default function DashboardSettings({ widgets, onChange, open, onClose }: 
                 <button
                   onClick={() => moveDown(widget.id)}
                   disabled={idx === sorted.length - 1}
-                  className="text-gray-500 hover:text-gray-300 disabled:opacity-20 transition-colors p-0.5"
+                  className="text-gray-400 hover:text-gray-600 disabled:opacity-20 transition-colors p-0.5"
                 >
                   <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
@@ -106,8 +106,8 @@ export default function DashboardSettings({ widgets, onChange, open, onClose }: 
             </div>
           ))}
         </div>
-        <div className="p-3 border-t border-gray-700">
-          <p className="text-xs text-gray-500 text-center">Toggle visibility and reorder widgets</p>
+        <div className="p-3 border-t border-gray-200">
+          <p className="text-xs text-gray-400 text-center">Toggle visibility and reorder widgets</p>
         </div>
       </div>
     </>
