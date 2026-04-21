@@ -16,9 +16,9 @@ export default function HoldingsTable({ holdings, onDelete }: Props) {
 
   if (holdings.length === 0) {
     return (
-      <div className="bg-gray-800/50 border border-gray-700/50 rounded-xl p-6 backdrop-blur-sm">
-        <h2 className="text-lg font-semibold text-white mb-4">Holdings</h2>
-        <p className="text-gray-500 text-center py-8">
+      <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
+        <h2 className="text-lg font-semibold text-gray-900 mb-4">Holdings</h2>
+        <p className="text-gray-400 text-center py-8">
           No holdings yet. Add your first stock above.
         </p>
       </div>
@@ -26,8 +26,8 @@ export default function HoldingsTable({ holdings, onDelete }: Props) {
   }
 
   return (
-    <div className="bg-gray-800/50 border border-gray-700/50 rounded-xl p-4 sm:p-6 backdrop-blur-sm">
-      <h2 className="text-lg font-semibold text-white mb-4">Holdings</h2>
+    <div className="bg-white border border-gray-200 rounded-xl p-4 sm:p-6 shadow-sm">
+      <h2 className="text-lg font-semibold text-gray-900 mb-4">Holdings</h2>
 
       {/* Mobile card view */}
       <div className="flex flex-col gap-3 md:hidden">
@@ -42,20 +42,20 @@ export default function HoldingsTable({ holdings, onDelete }: Props) {
           return (
             <div
               key={h.id}
-              className="bg-gray-700/30 border border-gray-700/50 rounded-lg p-4"
+              className="bg-gray-50 border border-gray-200 rounded-lg p-4"
             >
               <div className="flex items-start justify-between mb-3">
                 <div>
-                  <span className="font-bold text-white text-base">
+                  <span className="font-bold text-gray-900 text-base">
                     {h.ticker}
                   </span>
-                  <p className="text-xs text-gray-400 truncate max-w-[200px]">
+                  <p className="text-xs text-gray-500 truncate max-w-[200px]">
                     {h.name}
                   </p>
                 </div>
                 <button
                   onClick={() => onDelete(h.id)}
-                  className="p-2 -m-2 text-gray-500 active:text-red-400 transition-colors"
+                  className="p-2 -m-2 text-gray-400 active:text-red-500 transition-colors"
                   title="Remove holding"
                 >
                   <svg
@@ -76,34 +76,34 @@ export default function HoldingsTable({ holdings, onDelete }: Props) {
 
               <div className="grid grid-cols-2 gap-y-2 gap-x-4 text-sm">
                 <div>
-                  <span className="text-gray-500 text-xs">Shares</span>
-                  <p className="text-gray-300">{h.shares}</p>
+                  <span className="text-gray-400 text-xs">Shares</span>
+                  <p className="text-gray-600">{h.shares}</p>
                 </div>
                 <div>
-                  <span className="text-gray-500 text-xs">Avg Cost</span>
-                  <p className="text-gray-300">{fmt(h.avg_cost)}</p>
+                  <span className="text-gray-400 text-xs">Avg Cost</span>
+                  <p className="text-gray-600">{fmt(h.avg_cost)}</p>
                 </div>
                 <div>
-                  <span className="text-gray-500 text-xs">Price</span>
-                  <p className="text-white font-medium">
+                  <span className="text-gray-400 text-xs">Price</span>
+                  <p className="text-gray-900 font-medium">
                     {price > 0 ? fmt(price) : "—"}
                   </p>
                 </div>
                 <div>
-                  <span className="text-gray-500 text-xs">Value</span>
-                  <p className="text-white font-medium">
+                  <span className="text-gray-400 text-xs">Value</span>
+                  <p className="text-gray-900 font-medium">
                     {price > 0 ? fmt(value) : "—"}
                   </p>
                 </div>
               </div>
 
               {price > 0 && (
-                <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-700/50">
+                <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-200">
                   <div>
-                    <span className="text-gray-500 text-xs">Gain/Loss</span>
+                    <span className="text-gray-400 text-xs">Gain/Loss</span>
                     <p
                       className={`text-sm font-medium ${
-                        gain >= 0 ? "text-emerald-400" : "text-red-400"
+                        gain >= 0 ? "text-emerald-600" : "text-red-500"
                       }`}
                     >
                       {fmt(gain)}{" "}
@@ -114,10 +114,10 @@ export default function HoldingsTable({ holdings, onDelete }: Props) {
                     </p>
                   </div>
                   <div className="text-right">
-                    <span className="text-gray-500 text-xs">Today</span>
+                    <span className="text-gray-400 text-xs">Today</span>
                     <p
                       className={`text-sm font-medium ${
-                        dayChange >= 0 ? "text-emerald-400" : "text-red-400"
+                        dayChange >= 0 ? "text-emerald-600" : "text-red-500"
                       }`}
                     >
                       {dayChange >= 0 ? "+" : ""}
@@ -135,7 +135,7 @@ export default function HoldingsTable({ holdings, onDelete }: Props) {
       <div className="hidden md:block overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
-            <tr className="text-gray-400 border-b border-gray-700">
+            <tr className="text-gray-500 border-b border-gray-200">
               <th className="text-left py-3 px-2">Ticker</th>
               <th className="text-left py-3 px-2">Name</th>
               <th className="text-right py-3 px-2">Shares</th>
@@ -161,29 +161,29 @@ export default function HoldingsTable({ holdings, onDelete }: Props) {
               return (
                 <tr
                   key={h.id}
-                  className="border-b border-gray-700/50 hover:bg-gray-700/30"
+                  className="border-b border-gray-100 hover:bg-blue-50/50"
                 >
-                  <td className="py-3 px-2 font-bold text-white">
+                  <td className="py-3 px-2 font-bold text-gray-900">
                     {h.ticker}
                   </td>
-                  <td className="py-3 px-2 text-gray-300 max-w-[150px] truncate">
+                  <td className="py-3 px-2 text-gray-600 max-w-[150px] truncate">
                     {h.name}
                   </td>
-                  <td className="py-3 px-2 text-right text-gray-300">
+                  <td className="py-3 px-2 text-right text-gray-600">
                     {h.shares}
                   </td>
-                  <td className="py-3 px-2 text-right text-gray-300">
+                  <td className="py-3 px-2 text-right text-gray-600">
                     {fmt(h.avg_cost)}
                   </td>
-                  <td className="py-3 px-2 text-right text-white">
+                  <td className="py-3 px-2 text-right text-gray-900">
                     {price > 0 ? fmt(price) : "—"}
                   </td>
-                  <td className="py-3 px-2 text-right text-white">
+                  <td className="py-3 px-2 text-right text-gray-900">
                     {price > 0 ? fmt(value) : "—"}
                   </td>
                   <td
                     className={`py-3 px-2 text-right font-medium ${
-                      gain >= 0 ? "text-emerald-400" : "text-red-400"
+                      gain >= 0 ? "text-emerald-600" : "text-red-500"
                     }`}
                   >
                     {price > 0 ? (
@@ -200,7 +200,7 @@ export default function HoldingsTable({ holdings, onDelete }: Props) {
                   </td>
                   <td
                     className={`py-3 px-2 text-right ${
-                      dayChange >= 0 ? "text-emerald-400" : "text-red-400"
+                      dayChange >= 0 ? "text-emerald-600" : "text-red-500"
                     }`}
                   >
                     {price > 0
@@ -210,7 +210,7 @@ export default function HoldingsTable({ holdings, onDelete }: Props) {
                   <td className="py-3 px-2 text-center">
                     <button
                       onClick={() => onDelete(h.id)}
-                      className="text-gray-500 hover:text-red-400 transition-colors p-1"
+                      className="text-gray-400 hover:text-red-500 transition-colors p-1"
                       title="Remove holding"
                     >
                       <svg
