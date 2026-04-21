@@ -8,6 +8,7 @@ import AddStockForm from "./AddStockForm";
 import PortfolioSidebar from "./PortfolioSidebar";
 import PortfolioAllocation from "./PortfolioAllocation";
 import DashboardSettings from "./DashboardSettings";
+import { useAuth } from "./AuthProvider";
 import { Holding, Portfolio, PortfolioSnapshot, DashboardWidget, DEFAULT_WIDGETS } from "@/types";
 
 function loadWidgets(): DashboardWidget[] {
@@ -28,6 +29,7 @@ function saveWidgets(widgets: DashboardWidget[]) {
 }
 
 export default function Dashboard() {
+  const { user, logout } = useAuth();
   const [portfolios, setPortfolios] = useState<Portfolio[]>([]);
   const [activePortfolioId, setActivePortfolioId] = useState<number | null>(null);
   const [holdings, setHoldings] = useState<Holding[]>([]);
@@ -165,6 +167,15 @@ export default function Dashboard() {
             {lastUpdated && (
               <span className="text-xs text-gray-400 hidden sm:inline">Updated {lastUpdated}</span>
             )}
+            <button
+              onClick={logout}
+              className="p-2 text-gray-400 hover:text-gray-700 transition-colors"
+              title={`Sign out (${user?.name})`}
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+              </svg>
+            </button>
             <button
               onClick={() => setShowSettings(true)}
               className="p-2 text-gray-400 hover:text-gray-700 transition-colors"
