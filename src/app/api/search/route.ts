@@ -1,4 +1,4 @@
-import { searchTicker } from "@/lib/alpha-vantage";
+import { searchTicker, searchCrypto } from "@/lib/alpha-vantage";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(req: NextRequest) {
@@ -6,6 +6,12 @@ export async function GET(req: NextRequest) {
   if (!query) {
     return NextResponse.json([]);
   }
+
+  const type = req.nextUrl.searchParams.get("type");
+  if (type === "crypto") {
+    return NextResponse.json(searchCrypto(query));
+  }
+
   const results = await searchTicker(query);
   return NextResponse.json(results);
 }

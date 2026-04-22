@@ -34,11 +34,13 @@ export async function POST(req: NextRequest) {
   if (auth instanceof NextResponse) return auth;
 
   const body = await req.json();
-  const { ticker, name, shares, avg_cost, portfolio_id } = body;
+  const { ticker, name, shares, avg_cost, portfolio_id, asset_type } = body;
 
   if (!ticker || !shares || !avg_cost) {
     return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
   }
+
+  const resolvedAssetType = asset_type === "crypto" ? "crypto" : "stock";
 
   const db = getDb();
 
@@ -50,8 +52,8 @@ export async function POST(req: NextRequest) {
   }
 
   const existing = db.prepare(
-    "SELECT * FROM holdings WHERE ticker = ? AND portfolio_id = ?"
-  ).get(ticker, portfolio_id) as Record<string, number> | undefined;
+    "SELECT * FROM holdings WHERE ticker = ? AND portfolio_id = ? AND asset_type = ?"
+  ).get(ticker, portfolio_id, resolvedAssetType) as Record<string, number> | undefined;
 
   if (existing) {
     const totalShares = existing.shares + shares;
@@ -60,8 +62,8 @@ export async function POST(req: NextRequest) {
     db.prepare("UPDATE holdings SET shares = ?, avg_cost = ? WHERE id = ?").run(totalShares, newAvgCost, existing.id);
   } else {
     db.prepare(
-      "INSERT INTO holdings (ticker, name, shares, avg_cost, portfolio_id) VALUES (?, ?, ?, ?, ?)"
-    ).run(ticker.toUpperCase(), name || ticker.toUpperCase(), shares, avg_cost, portfolio_id);
+      "INSERT INTO holdings (ticker, name, shares, avg_cost, portfolio_id, asset_type) VALUES (?, ?, ?, ?, ?, ?)"
+    ).run(ticker.toUpperCase(), name || ticker.toUpperCase(), shares, avg_cost, portfolio_id, resolvedAssetType);
   }
 
   return NextResponse.json({ success: true });
