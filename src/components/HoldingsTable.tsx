@@ -62,7 +62,7 @@ export default function HoldingsTable({ holdings, onDelete }: Props) {
 
   const SortIcon = ({ col }: { col: SortKey }) => {
     if (sortKey !== col) return <span className="text-gray-300 ml-0.5">&#8597;</span>;
-    return <span className="text-blue-500 ml-0.5">{sortDir === "asc" ? "&#9650;" : "&#9660;"}</span>;
+    return <span className="text-blue-500 ml-0.5">{sortDir === "asc" ? "▲" : "▼"}</span>;
   };
 
   if (holdings.length === 0) {
