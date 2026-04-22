@@ -20,10 +20,12 @@ export async function POST() {
     if (results[ticker]) continue;
 
     const cached = db.prepare(
-      "SELECT * FROM stock_prices WHERE ticker = ? AND updated_at > datetime('now', '-15 minutes')"
-    ).get(ticker) as { price: number; change_percent: number } | undefined;
+      "SELECT * FROM stock_prices WHERE ticker = ?"
+    ).get(ticker) as { price: number; change_percent: number; updated_at: string } | undefined;
 
-    if (cached) {
+    const isFresh = cached && cached.updated_at > new Date(Date.now() - 15 * 60 * 1000).toISOString().replace("T", " ").slice(0, 19);
+
+    if (cached && isFresh) {
       results[ticker] = { price: cached.price, changePercent: cached.change_percent };
       continue;
     }
@@ -43,6 +45,8 @@ export async function POST() {
       `).run(ticker, quote.price, quote.changePercent);
 
       results[ticker] = { price: quote.price, changePercent: quote.changePercent };
+    } else if (cached) {
+      results[ticker] = { price: cached.price, changePercent: cached.change_percent };
     }
   }
 
