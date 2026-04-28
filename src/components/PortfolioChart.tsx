@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useMemo } from "react";
 import {
   ResponsiveContainer,
   AreaChart,
@@ -12,12 +13,41 @@ import {
 } from "recharts";
 import { PortfolioSnapshot, Transaction } from "@/types";
 
+type Range = "1W" | "1M" | "3M" | "6M" | "1Y" | "ALL";
+const RANGES: Range[] = ["1W", "1M", "3M", "6M", "1Y", "ALL"];
+
+function cutoffDate(range: Range): Date | null {
+  if (range === "ALL") return null;
+  const now = new Date();
+  switch (range) {
+    case "1W": now.setDate(now.getDate() - 7); break;
+    case "1M": now.setMonth(now.getMonth() - 1); break;
+    case "3M": now.setMonth(now.getMonth() - 3); break;
+    case "6M": now.setMonth(now.getMonth() - 6); break;
+    case "1Y": now.setFullYear(now.getFullYear() - 1); break;
+  }
+  return now;
+}
+
 interface Props {
   snapshots: PortfolioSnapshot[];
   transactions?: Transaction[];
 }
 
 export default function PortfolioChart({ snapshots, transactions = [] }: Props) {
+  const [range, setRange] = useState<Range>("ALL");
+
+  const filtered = useMemo(() => {
+    const cutoff = cutoffDate(range);
+    if (!cutoff) return snapshots;
+    return snapshots.filter((s) => {
+      const d = s.date.includes(" ")
+        ? new Date(s.date.replace(" ", "T") + ":00Z")
+        : new Date(s.date + "T00:00:00Z");
+      return d >= cutoff;
+    });
+  }, [snapshots, range]);
+
   if (snapshots.length === 0) {
     return (
       <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
@@ -29,7 +59,7 @@ export default function PortfolioChart({ snapshots, transactions = [] }: Props) 
     );
   }
 
-  const data = snapshots.map((s) => ({
+  const data = filtered.map((s) => ({
     date: s.date,
     value: s.total_value,
     cost: s.total_cost,
@@ -65,7 +95,24 @@ export default function PortfolioChart({ snapshots, transactions = [] }: Props) 
 
   return (
     <div className="bg-white border border-gray-200 rounded-xl p-4 sm:p-6 shadow-sm">
-      <h2 className="text-lg font-semibold text-gray-900 mb-4">Portfolio Performance</h2>
+      <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
+        <h2 className="text-lg font-semibold text-gray-900">Portfolio Performance</h2>
+        <div className="flex gap-1 bg-gray-100 rounded-lg p-0.5">
+          {RANGES.map((r) => (
+            <button
+              key={r}
+              onClick={() => setRange(r)}
+              className={`px-2.5 py-1 text-xs font-medium rounded-md transition-colors ${
+                range === r
+                  ? "bg-white text-blue-600 shadow-sm"
+                  : "text-gray-500 hover:text-gray-700"
+              }`}
+            >
+              {r}
+            </button>
+          ))}
+        </div>
+      </div>
       <div className="h-[220px] sm:h-[300px]">
       <ResponsiveContainer width="100%" height="100%">
         <AreaChart data={data}>
