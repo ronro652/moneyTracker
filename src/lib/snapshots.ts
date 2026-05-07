@@ -2,6 +2,11 @@ import { getDb } from "./db";
 import { fetchStockQuote, fetchCryptoQuote } from "./alpha-vantage";
 
 const BUCKET_HOURS = 3;
+const API_DELAY_MS = 1000;
+
+function sleep(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
 
 export async function refreshPricesAndSnapshot(userId: number) {
   const db = getDb();
@@ -39,6 +44,8 @@ export async function refreshPricesAndSnapshot(userId: number) {
       };
       continue;
     }
+
+    if (Object.keys(results).length > 0) await sleep(API_DELAY_MS);
 
     const quote =
       asset_type === "crypto"
@@ -103,6 +110,19 @@ export async function refreshPricesAndSnapshot(userId: number) {
   }
 
   return results;
+}
+
+const DAILY_LIMIT = 25;
+
+export function getApiQuota() {
+  const db = getDb();
+  const today = new Date().toISOString().split("T")[0];
+  const row = db
+    .prepare(
+      "SELECT COUNT(*) as count FROM stock_prices WHERE updated_at >= ?"
+    )
+    .get(today + " 00:00:00") as { count: number };
+  return { used: row.count, limit: DAILY_LIMIT, remaining: Math.max(0, DAILY_LIMIT - row.count) };
 }
 
 export async function refreshAllUsers() {

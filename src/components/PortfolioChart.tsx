@@ -142,7 +142,16 @@ export default function PortfolioChart({ snapshots, transactions = [] }: Props) 
               return day;
             }}
           />
-          <YAxis stroke="#9ca3af" tick={{ fontSize: 11, fill: "#6b7280" }} tickFormatter={fmt} width={65} />
+          <YAxis
+            stroke="#9ca3af"
+            tick={{ fontSize: 11, fill: "#6b7280" }}
+            tickFormatter={fmt}
+            width={65}
+            domain={([dataMin, dataMax]: [number, number]) => {
+              const pad = (dataMax - dataMin) * 0.1 || dataMax * 0.05;
+              return [Math.max(0, dataMin - pad), dataMax + pad];
+            }}
+          />
           <Tooltip
             contentStyle={{
               backgroundColor: "#ffffff",

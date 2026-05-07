@@ -39,6 +39,7 @@ export default function Dashboard() {
   const [ilsRate, setIlsRate] = useState<number | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [lastUpdated, setLastUpdated] = useState<string | null>(null);
+  const [apiQuota, setApiQuota] = useState<{ used: number; limit: number; remaining: number } | null>(null);
   const [widgets, setWidgets] = useState<DashboardWidget[]>(DEFAULT_WIDGETS);
   const [showSettings, setShowSettings] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -92,9 +93,17 @@ export default function Dashboard() {
     if (data.rate) setIlsRate(data.rate);
   }, []);
 
+  const fetchQuota = useCallback(async () => {
+    const res = await fetch("/api/prices");
+    const data = await res.json();
+    if (data.quota) setApiQuota(data.quota);
+  }, []);
+
   const refreshPrices = useCallback(async () => {
     setRefreshing(true);
-    await fetch("/api/prices", { method: "POST" });
+    const res = await fetch("/api/prices", { method: "POST" });
+    const data = await res.json();
+    if (data.quota) setApiQuota(data.quota);
     await Promise.all([fetchHoldings(), fetchSnapshots(), fetchTransactions()]);
     setLastUpdated(new Date().toLocaleTimeString());
     setRefreshing(false);
@@ -103,7 +112,8 @@ export default function Dashboard() {
   useEffect(() => {
     fetchPortfolios();
     fetchIlsRate();
-  }, [fetchPortfolios, fetchIlsRate]);
+    fetchQuota();
+  }, [fetchPortfolios, fetchIlsRate, fetchQuota]);
 
   useEffect(() => {
     fetchHoldings();
@@ -187,6 +197,11 @@ export default function Dashboard() {
             </div>
           </div>
           <div className="flex items-center gap-2 sm:gap-3">
+            {apiQuota && (
+              <span className={`text-xs hidden sm:inline ${apiQuota.remaining === 0 ? "text-red-500 font-medium" : apiQuota.remaining <= 5 ? "text-amber-500" : "text-gray-400"}`}>
+                {apiQuota.remaining === 0 ? "API limit reached" : `${apiQuota.remaining}/${apiQuota.limit} calls left`}
+              </span>
+            )}
             {lastUpdated && (
               <span className="text-xs text-gray-400 hidden sm:inline">Updated {lastUpdated}</span>
             )}
