@@ -1,5 +1,5 @@
-const API_KEY = process.env.ALPHA_VANTAGE_API_KEY || "demo";
-const BASE_URL = "https://www.alphavantage.co/query";
+const API_KEY = process.env.FINNHUB_API_KEY || "";
+const BASE_URL = "https://finnhub.io/api/v1";
 
 export interface StockQuote {
   ticker: string;
@@ -9,55 +9,86 @@ export interface StockQuote {
 }
 
 export async function fetchStockQuote(ticker: string): Promise<StockQuote | null> {
-  const url = `${BASE_URL}?function=GLOBAL_QUOTE&symbol=${encodeURIComponent(ticker)}&apikey=${API_KEY}`;
-
+  const url = `${BASE_URL}/quote?symbol=${encodeURIComponent(ticker)}&token=${API_KEY}`;
   const res = await fetch(url);
   const data = await res.json();
 
-  const quote = data["Global Quote"];
-  if (!quote || !quote["05. price"]) {
+  if (!data || data.c === 0 || data.c === undefined) {
     return null;
   }
 
   return {
-    ticker: quote["01. symbol"],
-    price: parseFloat(quote["05. price"]),
-    changePercent: parseFloat(quote["10. change percent"]?.replace("%", "") || "0"),
+    ticker,
+    price: data.c,
+    changePercent: data.dp ?? 0,
     name: ticker.toUpperCase(),
   };
 }
 
 export async function searchTicker(query: string): Promise<{ ticker: string; name: string }[]> {
-  const url = `${BASE_URL}?function=SYMBOL_SEARCH&keywords=${encodeURIComponent(query)}&apikey=${API_KEY}`;
-
+  const url = `${BASE_URL}/search?q=${encodeURIComponent(query)}&token=${API_KEY}`;
   const res = await fetch(url);
   const data = await res.json();
 
-  const matches = data["bestMatches"];
-  if (!matches) return [];
+  if (!data?.result) return [];
 
-  return matches.slice(0, 5).map((m: Record<string, string>) => ({
-    ticker: m["1. symbol"],
-    name: m["2. name"],
-  }));
+  return data.result
+    .filter((r: Record<string, string>) => r.type === "Common Stock" || r.type === "ETP")
+    .slice(0, 5)
+    .map((r: Record<string, string>) => ({
+      ticker: r.symbol,
+      name: r.description,
+    }));
 }
 
-export async function fetchCryptoQuote(symbol: string): Promise<StockQuote | null> {
-  const url = `${BASE_URL}?function=CURRENCY_EXCHANGE_RATE&from_currency=${encodeURIComponent(symbol)}&to_currency=USD&apikey=${API_KEY}`;
+const CRYPTO_EXCHANGE_MAP: Record<string, string> = {
+  BTC: "BINANCE:BTCUSDT",
+  ETH: "BINANCE:ETHUSDT",
+  BNB: "BINANCE:BNBUSDT",
+  SOL: "BINANCE:SOLUSDT",
+  XRP: "BINANCE:XRPUSDT",
+  ADA: "BINANCE:ADAUSDT",
+  DOGE: "BINANCE:DOGEUSDT",
+  DOT: "BINANCE:DOTUSDT",
+  MATIC: "BINANCE:MATICUSDT",
+  LTC: "BINANCE:LTCUSDT",
+  AVAX: "BINANCE:AVAXUSDT",
+  LINK: "BINANCE:LINKUSDT",
+  UNI: "BINANCE:UNIUSDT",
+  SHIB: "BINANCE:SHIBUSDT",
+  ATOM: "BINANCE:ATOMUSDT",
+  XLM: "BINANCE:XLMUSDT",
+  FIL: "BINANCE:FILUSDT",
+  NEAR: "BINANCE:NEARUSDT",
+  APT: "BINANCE:APTUSDT",
+  ARB: "BINANCE:ARBUSDT",
+  OP: "BINANCE:OPUSDT",
+  SUI: "BINANCE:SUIUSDT",
+  PEPE: "BINANCE:PEPEUSDT",
+  AAVE: "BINANCE:AAVEUSDT",
+  TRX: "BINANCE:TRXUSDT",
+  ETC: "BINANCE:ETCUSDT",
+  BCH: "BINANCE:BCHUSDT",
+  ALGO: "BINANCE:ALGOUSDT",
+  VET: "BINANCE:VETUSDT",
+  FTM: "BINANCE:FTMUSDT",
+};
 
+export async function fetchCryptoQuote(symbol: string): Promise<StockQuote | null> {
+  const finnhubSymbol = CRYPTO_EXCHANGE_MAP[symbol.toUpperCase()] || `BINANCE:${symbol.toUpperCase()}USDT`;
+  const url = `${BASE_URL}/quote?symbol=${encodeURIComponent(finnhubSymbol)}&token=${API_KEY}`;
   const res = await fetch(url);
   const data = await res.json();
 
-  const rate = data["Realtime Currency Exchange Rate"];
-  if (!rate || !rate["5. Exchange Rate"]) {
+  if (!data || data.c === 0 || data.c === undefined) {
     return null;
   }
 
   return {
-    ticker: rate["1. From_Currency Code"],
-    price: parseFloat(rate["5. Exchange Rate"]),
-    changePercent: 0,
-    name: rate["2. From_Currency Name"],
+    ticker: symbol.toUpperCase(),
+    price: data.c,
+    changePercent: data.dp ?? 0,
+    name: symbol.toUpperCase(),
   };
 }
 
@@ -95,12 +126,12 @@ const CRYPTO_LIST: { ticker: string; name: string }[] = [
 ];
 
 export async function fetchExchangeRate(from: string, to: string): Promise<number | null> {
-  const url = `${BASE_URL}?function=CURRENCY_EXCHANGE_RATE&from_currency=${encodeURIComponent(from)}&to_currency=${encodeURIComponent(to)}&apikey=${API_KEY}`;
+  const url = `${BASE_URL}/forex/rates?base=${encodeURIComponent(from)}&token=${API_KEY}`;
   const res = await fetch(url);
   const data = await res.json();
-  const rate = data["Realtime Currency Exchange Rate"];
-  if (!rate || !rate["5. Exchange Rate"]) return null;
-  return parseFloat(rate["5. Exchange Rate"]);
+
+  if (!data?.quote || !data.quote[to]) return null;
+  return data.quote[to];
 }
 
 export function searchCrypto(query: string): { ticker: string; name: string }[] {

@@ -199,7 +199,7 @@ export default function Dashboard() {
           <div className="flex items-center gap-2 sm:gap-3">
             {apiQuota && (
               <span className={`text-xs hidden sm:inline ${apiQuota.remaining === 0 ? "text-red-500 font-medium" : apiQuota.remaining <= 5 ? "text-amber-500" : "text-gray-400"}`}>
-                {apiQuota.remaining === 0 ? "API limit reached" : `${apiQuota.remaining}/${apiQuota.limit} calls left`}
+                {apiQuota.remaining === 0 ? "API limit reached" : `${apiQuota.remaining}/${apiQuota.limit}/min`}
               </span>
             )}
             {lastUpdated && (
