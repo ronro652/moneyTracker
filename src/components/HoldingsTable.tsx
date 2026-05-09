@@ -3,7 +3,7 @@
 import { useState, useMemo } from "react";
 import { Holding } from "@/types";
 
-type SortKey = "ticker" | "name" | "shares" | "avg_cost" | "price" | "value" | "gain" | "day";
+type SortKey = "ticker" | "name" | "shares" | "avg_cost" | "price" | "value" | "gain" | "gainPct" | "day";
 type SortDir = "asc" | "desc";
 
 interface Props {
@@ -17,7 +17,8 @@ function getComputedFields(h: Holding) {
   const gain = (price - h.avg_cost) * h.shares;
   const gainPct = h.avg_cost > 0 ? ((price - h.avg_cost) / h.avg_cost) * 100 : 0;
   const dayChange = h.change_percent || 0;
-  return { price, value, gain, gainPct, dayChange };
+  const priceChange = price * (dayChange / 100);
+  return { price, value, gain, gainPct, dayChange, priceChange };
 }
 
 export default function HoldingsTable({ holdings, onDelete }: Props) {
@@ -44,6 +45,7 @@ export default function HoldingsTable({ holdings, onDelete }: Props) {
         case "price": cmp = af.price - bf.price; break;
         case "value": cmp = af.value - bf.value; break;
         case "gain": cmp = af.gain - bf.gain; break;
+        case "gainPct": cmp = af.gainPct - bf.gainPct; break;
         case "day": cmp = af.dayChange - bf.dayChange; break;
       }
       return sortDir === "asc" ? cmp : -cmp;
@@ -97,6 +99,7 @@ export default function HoldingsTable({ holdings, onDelete }: Props) {
             <option value="price">Price</option>
             <option value="value">Value</option>
             <option value="gain">Gain/Loss</option>
+            <option value="gainPct">Change %</option>
             <option value="day">Day %</option>
           </select>
           <button
@@ -107,7 +110,7 @@ export default function HoldingsTable({ holdings, onDelete }: Props) {
           </button>
         </div>
         {sorted.map((h) => {
-          const { price, value, gain, gainPct, dayChange } = getComputedFields(h);
+          const { price, value, gain, gainPct, dayChange, priceChange } = getComputedFields(h);
 
           return (
             <div
@@ -190,6 +193,17 @@ export default function HoldingsTable({ holdings, onDelete }: Props) {
                       </span>
                     </p>
                   </div>
+                  <div>
+                    <span className="text-gray-400 text-xs">Change %</span>
+                    <p
+                      className={`text-sm font-medium ${
+                        gainPct >= 0 ? "text-emerald-600" : "text-red-500"
+                      }`}
+                    >
+                      {gainPct >= 0 ? "+" : ""}
+                      {gainPct.toFixed(1)}%
+                    </p>
+                  </div>
                   <div className="text-right">
                     <span className="text-gray-400 text-xs">Today</span>
                     <p
@@ -234,6 +248,9 @@ export default function HoldingsTable({ holdings, onDelete }: Props) {
               <th className="text-right py-3 px-2 cursor-pointer select-none hover:text-gray-800 transition-colors" onClick={() => toggleSort("gain")}>
                 Gain/Loss <SortIcon col="gain" />
               </th>
+              <th className="text-right py-3 px-2 cursor-pointer select-none hover:text-gray-800 transition-colors" onClick={() => toggleSort("gainPct")}>
+                Change % <SortIcon col="gainPct" />
+              </th>
               <th className="text-right py-3 px-2 cursor-pointer select-none hover:text-gray-800 transition-colors" onClick={() => toggleSort("day")}>
                 Day % <SortIcon col="day" />
               </th>
@@ -242,7 +259,7 @@ export default function HoldingsTable({ holdings, onDelete }: Props) {
           </thead>
           <tbody>
             {sorted.map((h) => {
-              const { price, value, gain, gainPct, dayChange } = getComputedFields(h);
+              const { price, value, gain, gainPct, dayChange, priceChange } = getComputedFields(h);
 
               return (
                 <tr
@@ -279,17 +296,16 @@ export default function HoldingsTable({ holdings, onDelete }: Props) {
                       gain >= 0 ? "text-emerald-600" : "text-red-500"
                     }`}
                   >
-                    {price > 0 ? (
-                      <>
-                        {fmt(gain)}{" "}
-                        <span className="text-xs opacity-75">
-                          ({gainPct >= 0 ? "+" : ""}
-                          {gainPct.toFixed(1)}%)
-                        </span>
-                      </>
-                    ) : (
-                      "—"
-                    )}
+                    {price > 0 ? fmt(gain) : "—"}
+                  </td>
+                  <td
+                    className={`py-3 px-2 text-right font-medium ${
+                      gainPct >= 0 ? "text-emerald-600" : "text-red-500"
+                    }`}
+                  >
+                    {price > 0
+                      ? `${gainPct >= 0 ? "+" : ""}${gainPct.toFixed(1)}%`
+                      : "—"}
                   </td>
                   <td
                     className={`py-3 px-2 text-right ${

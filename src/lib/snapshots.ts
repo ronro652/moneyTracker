@@ -40,10 +40,15 @@ export async function refreshPricesAndSnapshot(userId: number) {
       continue;
     }
 
-    const quote =
-      asset_type === "crypto"
-        ? await fetchCryptoQuote(ticker)
-        : await fetchStockQuote(ticker);
+    let quote: Awaited<ReturnType<typeof fetchStockQuote>> = null;
+    try {
+      quote =
+        asset_type === "crypto"
+          ? await fetchCryptoQuote(ticker)
+          : await fetchStockQuote(ticker);
+    } catch (e) {
+      console.error(`[prices] Failed to fetch ${ticker}:`, e);
+    }
 
     if (quote) {
       db.prepare(

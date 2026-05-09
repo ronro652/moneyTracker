@@ -9,36 +9,44 @@ export interface StockQuote {
 }
 
 export async function fetchStockQuote(ticker: string): Promise<StockQuote | null> {
-  const url = `${BASE_URL}/quote?symbol=${encodeURIComponent(ticker)}&token=${API_KEY}`;
-  const res = await fetch(url);
-  const data = await res.json();
+  try {
+    const url = `${BASE_URL}/quote?symbol=${encodeURIComponent(ticker)}&token=${API_KEY}`;
+    const res = await fetch(url);
+    const data = await res.json();
 
-  if (!data || data.c === 0 || data.c === undefined) {
+    if (!data || data.c === 0 || data.c === undefined) {
+      return null;
+    }
+
+    return {
+      ticker,
+      price: data.c,
+      changePercent: data.dp ?? 0,
+      name: ticker.toUpperCase(),
+    };
+  } catch {
     return null;
   }
-
-  return {
-    ticker,
-    price: data.c,
-    changePercent: data.dp ?? 0,
-    name: ticker.toUpperCase(),
-  };
 }
 
 export async function searchTicker(query: string): Promise<{ ticker: string; name: string }[]> {
-  const url = `${BASE_URL}/search?q=${encodeURIComponent(query)}&token=${API_KEY}`;
-  const res = await fetch(url);
-  const data = await res.json();
+  try {
+    const url = `${BASE_URL}/search?q=${encodeURIComponent(query)}&token=${API_KEY}`;
+    const res = await fetch(url);
+    const data = await res.json();
 
-  if (!data?.result) return [];
+    if (!data?.result) return [];
 
-  return data.result
-    .filter((r: Record<string, string>) => r.type === "Common Stock" || r.type === "ETP")
-    .slice(0, 5)
-    .map((r: Record<string, string>) => ({
-      ticker: r.symbol,
-      name: r.description,
-    }));
+    return data.result
+      .filter((r: Record<string, string>) => r.type === "Common Stock" || r.type === "ETP")
+      .slice(0, 5)
+      .map((r: Record<string, string>) => ({
+        ticker: r.symbol,
+        name: r.description,
+      }));
+  } catch {
+    return [];
+  }
 }
 
 const CRYPTO_EXCHANGE_MAP: Record<string, string> = {
@@ -75,21 +83,25 @@ const CRYPTO_EXCHANGE_MAP: Record<string, string> = {
 };
 
 export async function fetchCryptoQuote(symbol: string): Promise<StockQuote | null> {
-  const finnhubSymbol = CRYPTO_EXCHANGE_MAP[symbol.toUpperCase()] || `BINANCE:${symbol.toUpperCase()}USDT`;
-  const url = `${BASE_URL}/quote?symbol=${encodeURIComponent(finnhubSymbol)}&token=${API_KEY}`;
-  const res = await fetch(url);
-  const data = await res.json();
+  try {
+    const finnhubSymbol = CRYPTO_EXCHANGE_MAP[symbol.toUpperCase()] || `BINANCE:${symbol.toUpperCase()}USDT`;
+    const url = `${BASE_URL}/quote?symbol=${encodeURIComponent(finnhubSymbol)}&token=${API_KEY}`;
+    const res = await fetch(url);
+    const data = await res.json();
 
-  if (!data || data.c === 0 || data.c === undefined) {
+    if (!data || data.c === 0 || data.c === undefined) {
+      return null;
+    }
+
+    return {
+      ticker: symbol.toUpperCase(),
+      price: data.c,
+      changePercent: data.dp ?? 0,
+      name: symbol.toUpperCase(),
+    };
+  } catch {
     return null;
   }
-
-  return {
-    ticker: symbol.toUpperCase(),
-    price: data.c,
-    changePercent: data.dp ?? 0,
-    name: symbol.toUpperCase(),
-  };
 }
 
 const CRYPTO_LIST: { ticker: string; name: string }[] = [
@@ -126,12 +138,16 @@ const CRYPTO_LIST: { ticker: string; name: string }[] = [
 ];
 
 export async function fetchExchangeRate(from: string, to: string): Promise<number | null> {
-  const url = `${BASE_URL}/forex/rates?base=${encodeURIComponent(from)}&token=${API_KEY}`;
-  const res = await fetch(url);
-  const data = await res.json();
+  try {
+    const url = `${BASE_URL}/forex/rates?base=${encodeURIComponent(from)}&token=${API_KEY}`;
+    const res = await fetch(url);
+    const data = await res.json();
 
-  if (!data?.quote || !data.quote[to]) return null;
-  return data.quote[to];
+    if (!data?.quote || !data.quote[to]) return null;
+    return data.quote[to];
+  } catch {
+    return null;
+  }
 }
 
 export function searchCrypto(query: string): { ticker: string; name: string }[] {
