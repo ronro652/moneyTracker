@@ -67,7 +67,7 @@ export default function PortfolioChart({ snapshots, transactions = [] }: Props) 
 
   const txByDate = new Map<string, { buys: number; sells: number }>();
   for (const t of transactions) {
-    const txDate = new Date(t.created_at + "Z");
+    const txDate = new Date(t.created_at);
     const bucket = Math.floor(txDate.getUTCHours() / 6) * 6;
     const key = `${txDate.toISOString().split("T")[0]} ${String(bucket).padStart(2, "0")}:00`;
     const entry = txByDate.get(key) || { buys: 0, sells: 0 };
@@ -147,9 +147,9 @@ export default function PortfolioChart({ snapshots, transactions = [] }: Props) 
             tick={{ fontSize: 11, fill: "#6b7280" }}
             tickFormatter={fmt}
             width={65}
-            domain={([dataMin, dataMax]: [number, number]) => {
+            domain={([dataMin, dataMax]: readonly number[]) => {
               const pad = (dataMax - dataMin) * 0.1 || dataMax * 0.05;
-              return [Math.max(0, dataMin - pad), dataMax + pad];
+              return [Math.max(0, dataMin - pad), dataMax + pad] as const;
             }}
           />
           <Tooltip

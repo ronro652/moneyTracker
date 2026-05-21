@@ -18,19 +18,45 @@ export default function SummaryCards({ holdings, transactions = [], ilsRate }: P
     0
   );
   const unrealizedGain = totalValue - totalCost;
-  const unrealizedPct = totalCost > 0 ? (unrealizedGain / totalCost) * 100 : 0;
 
   const realizedGain = transactions
     .filter((t) => t.type === "sell" && t.realized_gain !== null)
     .reduce((sum, t) => sum + (t.realized_gain ?? 0), 0);
 
   const totalProfit = unrealizedGain + realizedGain;
+  const totalReturnPct = totalCost > 0 ? (totalProfit / totalCost) * 100 : 0;
+
+  const buyTxns = transactions.filter((t) => t.type === "buy");
+  const firstBuyDate = buyTxns.length > 0
+    ? buyTxns.reduce((earliest, t) => (t.created_at < earliest ? t.created_at : earliest), buyTxns[0].created_at)
+    : null;
+  let cagr: number | null = null;
+  if (firstBuyDate && totalCost > 0) {
+    const years = (Date.now() - new Date(firstBuyDate).getTime()) / (365.25 * 24 * 60 * 60 * 1000);
+    if (years >= 0.01) {
+      const totalReturn = 1 + totalReturnPct / 100;
+      cagr = totalReturn > 0 ? (Math.pow(totalReturn, 1 / years) - 1) * 100 : 0;
+    }
+  }
 
   const dailyChange = holdings.reduce((sum, h) => {
     if (!h.current_price || !h.change_percent) return sum;
     const prevPrice = h.current_price / (1 + h.change_percent / 100);
     return sum + (h.current_price - prevPrice) * h.shares;
   }, 0);
+
+  const holdingPerfs = holdings
+    .filter((h) => h.current_price && h.avg_cost > 0)
+    .map((h) => ({
+      ticker: h.ticker,
+      gainPct: ((h.current_price! - h.avg_cost) / h.avg_cost) * 100,
+    }));
+  const bestPerf = holdingPerfs.length > 0
+    ? holdingPerfs.reduce((best, h) => (h.gainPct > best.gainPct ? h : best))
+    : null;
+  const worstPerf = holdingPerfs.length > 0
+    ? holdingPerfs.reduce((worst, h) => (h.gainPct < worst.gainPct ? h : worst))
+    : null;
 
   const fmtUsd = (n: number) =>
     new Intl.NumberFormat("en-US", {
@@ -60,10 +86,10 @@ export default function SummaryCards({ holdings, transactions = [], ilsRate }: P
       color: totalProfit >= 0 ? "text-emerald-600" : "text-red-500",
     },
     {
-      label: "Unrealized Gain",
-      value: fmtUsd(unrealizedGain),
-      sub: `${unrealizedPct >= 0 ? "+" : ""}${unrealizedPct.toFixed(2)}% on open positions`,
-      color: unrealizedGain >= 0 ? "text-emerald-600" : "text-red-500",
+      label: "Total Return",
+      value: `${totalReturnPct >= 0 ? "+" : ""}${totalReturnPct.toFixed(2)}%`,
+      sub: cagr !== null ? `CAGR: ${cagr >= 0 ? "+" : ""}${cagr.toFixed(2)}%/yr` : "Overall return on invested capital",
+      color: totalReturnPct >= 0 ? "text-emerald-600" : "text-red-500",
     },
     {
       label: "Today's Change",
@@ -78,10 +104,12 @@ export default function SummaryCards({ holdings, transactions = [], ilsRate }: P
       color: "text-gray-900",
     },
     {
-      label: "Realized Gains",
-      value: fmtUsd(realizedGain),
-      sub: ilsRate ? fmtIls(realizedGain * ilsRate) : `From ${transactions.filter((t) => t.type === "sell").length} sell${transactions.filter((t) => t.type === "sell").length !== 1 ? "s" : ""}`,
-      color: realizedGain >= 0 ? "text-emerald-600" : "text-red-500",
+      label: "Best / Worst",
+      value: bestPerf ? `${bestPerf.ticker} ${bestPerf.gainPct >= 0 ? "+" : ""}${bestPerf.gainPct.toFixed(1)}%` : "—",
+      sub: worstPerf && worstPerf.ticker !== bestPerf?.ticker
+        ? `Worst: ${worstPerf.ticker} ${worstPerf.gainPct >= 0 ? "+" : ""}${worstPerf.gainPct.toFixed(1)}%`
+        : `${holdings.length} holding${holdings.length !== 1 ? "s" : ""} tracked`,
+      color: bestPerf && bestPerf.gainPct >= 0 ? "text-emerald-600" : "text-red-500",
     },
   ];
 

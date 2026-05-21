@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useCallback, useEffect } from "react";
+import { useToast } from "./Toast";
 import type { AssetType, TransactionType } from "@/types";
 
 interface Props {
@@ -16,6 +17,7 @@ interface SearchResult {
 }
 
 export default function AddStockForm({ onAdded, portfolioId, open, onClose }: Props) {
+  const { toast } = useToast();
   const [assetType, setAssetType] = useState<AssetType>("stock");
   const [transactionType, setTransactionType] = useState<TransactionType>("buy");
   const [ticker, setTicker] = useState("");
@@ -116,6 +118,15 @@ export default function AddStockForm({ onAdded, portfolioId, open, onClose }: Pr
     if (!res.ok) {
       setError(data.error || "Something went wrong");
       return;
+    }
+
+    const tickerName = name || ticker.toUpperCase();
+    if (transactionType === "sell") {
+      const gain = data.realized_gain ?? 0;
+      const gainStr = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(gain);
+      toast(`Sold ${shares} ${tickerName} — P/L: ${gainStr}`);
+    } else {
+      toast(`Bought ${shares} ${tickerName} at $${price}`);
     }
 
     resetForm();

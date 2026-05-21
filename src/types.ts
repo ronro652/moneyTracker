@@ -57,7 +57,7 @@ export interface PriceData {
   changePercent: number;
 }
 
-export type WidgetType = "summary" | "chart" | "holdings" | "add-stock" | "allocation" | "transactions";
+export type WidgetType = "summary" | "chart" | "profit-chart" | "holdings" | "add-stock" | "allocation" | "transactions";
 
 export interface DashboardWidget {
   id: string;
@@ -75,9 +75,10 @@ export const DEFAULT_WIDGETS: DashboardWidget[] = [
   { id: "summary", type: "summary", label: "Summary Cards", visible: true, order: 0 },
   { id: "add-stock", type: "add-stock", label: "Add Stock", visible: true, order: 1 },
   { id: "chart", type: "chart", label: "Performance Chart", visible: true, order: 2 },
-  { id: "allocation", type: "allocation", label: "Portfolio Allocation", visible: true, order: 3 },
-  { id: "holdings", type: "holdings", label: "Holdings Table", visible: true, order: 4 },
-  { id: "transactions", type: "transactions", label: "Transaction History", visible: true, order: 5 },
+  { id: "profit-chart", type: "profit-chart", label: "Profit / Loss Chart", visible: true, order: 3 },
+  { id: "allocation", type: "allocation", label: "Portfolio Allocation", visible: true, order: 4 },
+  { id: "holdings", type: "holdings", label: "Holdings Table", visible: true, order: 5 },
+  { id: "transactions", type: "transactions", label: "Transaction History", visible: true, order: 6 },
 ];
 
 export const PORTFOLIO_COLORS = [

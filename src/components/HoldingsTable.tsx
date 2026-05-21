@@ -1,13 +1,15 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { Holding } from "@/types";
+import { Holding, Portfolio } from "@/types";
 
 type SortKey = "ticker" | "name" | "shares" | "avg_cost" | "price" | "value" | "gain" | "gainPct" | "day";
 type SortDir = "asc" | "desc";
 
 interface Props {
   holdings: Holding[];
+  portfolios?: Portfolio[];
+  activePortfolioId?: number | null;
   onDelete: (id: number) => void;
 }
 
@@ -21,9 +23,18 @@ function getComputedFields(h: Holding) {
   return { price, value, gain, gainPct, dayChange, priceChange };
 }
 
-export default function HoldingsTable({ holdings, onDelete }: Props) {
+const PAGE_SIZE = 20;
+
+export default function HoldingsTable({ holdings, portfolios = [], activePortfolioId, onDelete }: Props) {
+  const showPortfolio = activePortfolioId === null && portfolios.length > 1;
+  const portfolioMap = useMemo(() => {
+    const map = new Map<number, Portfolio>();
+    for (const p of portfolios) map.set(p.id, p);
+    return map;
+  }, [portfolios]);
   const [sortKey, setSortKey] = useState<SortKey>("value");
   const [sortDir, setSortDir] = useState<SortDir>("desc");
+  const [page, setPage] = useState(0);
 
   const fmt = (n: number) =>
     new Intl.NumberFormat("en-US", {
@@ -67,6 +78,9 @@ export default function HoldingsTable({ holdings, onDelete }: Props) {
     return <span className="text-blue-500 ml-0.5">{sortDir === "asc" ? "▲" : "▼"}</span>;
   };
 
+  const totalPages = Math.ceil(sorted.length / PAGE_SIZE);
+  const paginated = sorted.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
+
   if (holdings.length === 0) {
     return (
       <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
@@ -109,7 +123,7 @@ export default function HoldingsTable({ holdings, onDelete }: Props) {
             {sortDir === "asc" ? "↑ Asc" : "↓ Desc"}
           </button>
         </div>
-        {sorted.map((h) => {
+        {paginated.map((h) => {
           const { price, value, gain, gainPct, dayChange, priceChange } = getComputedFields(h);
 
           return (
@@ -119,13 +133,21 @@ export default function HoldingsTable({ holdings, onDelete }: Props) {
             >
               <div className="flex items-start justify-between mb-3">
                 <div>
-                  <div className="flex items-center gap-1.5">
+                  <div className="flex items-center gap-1.5 flex-wrap">
                     <span className="font-bold text-gray-900 text-base">
                       {h.ticker}
                     </span>
                     {h.asset_type === "crypto" && (
                       <span className="text-[10px] font-medium bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded">
                         CRYPTO
+                      </span>
+                    )}
+                    {showPortfolio && portfolioMap.get(h.portfolio_id) && (
+                      <span
+                        className="text-[10px] font-medium px-1.5 py-0.5 rounded text-white"
+                        style={{ backgroundColor: portfolioMap.get(h.portfolio_id)!.color }}
+                      >
+                        {portfolioMap.get(h.portfolio_id)!.name}
                       </span>
                     )}
                   </div>
@@ -258,7 +280,7 @@ export default function HoldingsTable({ holdings, onDelete }: Props) {
             </tr>
           </thead>
           <tbody>
-            {sorted.map((h) => {
+            {paginated.map((h) => {
               const { price, value, gain, gainPct, dayChange, priceChange } = getComputedFields(h);
 
               return (
@@ -272,6 +294,14 @@ export default function HoldingsTable({ holdings, onDelete }: Props) {
                       {h.asset_type === "crypto" && (
                         <span className="text-[10px] font-medium bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded">
                           CRYPTO
+                        </span>
+                      )}
+                      {showPortfolio && portfolioMap.get(h.portfolio_id) && (
+                        <span
+                          className="text-[10px] font-medium px-1.5 py-0.5 rounded text-white"
+                          style={{ backgroundColor: portfolioMap.get(h.portfolio_id)!.color }}
+                        >
+                          {portfolioMap.get(h.portfolio_id)!.name}
                         </span>
                       )}
                     </span>
@@ -343,6 +373,30 @@ export default function HoldingsTable({ holdings, onDelete }: Props) {
           </tbody>
         </table>
       </div>
+
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between mt-4 pt-3 border-t border-gray-200">
+          <span className="text-xs text-gray-400">
+            {page * PAGE_SIZE + 1}–{Math.min((page + 1) * PAGE_SIZE, sorted.length)} of {sorted.length}
+          </span>
+          <div className="flex gap-2">
+            <button
+              onClick={() => setPage(page - 1)}
+              disabled={page === 0}
+              className="text-xs px-3 py-1.5 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed transition"
+            >
+              Prev
+            </button>
+            <button
+              onClick={() => setPage(page + 1)}
+              disabled={page >= totalPages - 1}
+              className="text-xs px-3 py-1.5 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed transition"
+            >
+              Next
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

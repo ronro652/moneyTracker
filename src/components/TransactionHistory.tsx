@@ -1,12 +1,16 @@
 "use client";
 
+import { useState } from "react";
 import { Transaction } from "@/types";
 
 interface Props {
   transactions: Transaction[];
 }
 
+const PAGE_SIZE = 20;
+
 export default function TransactionHistory({ transactions }: Props) {
+  const [page, setPage] = useState(0);
   const fmt = (n: number) =>
     new Intl.NumberFormat("en-US", {
       style: "currency",
@@ -14,7 +18,7 @@ export default function TransactionHistory({ transactions }: Props) {
     }).format(n);
 
   const fmtDate = (d: string) => {
-    const date = new Date(d + "Z");
+    const date = new Date(d);
     return date.toLocaleDateString("en-US", {
       month: "short",
       day: "numeric",
@@ -23,7 +27,7 @@ export default function TransactionHistory({ transactions }: Props) {
   };
 
   const fmtTime = (d: string) => {
-    const date = new Date(d + "Z");
+    const date = new Date(d);
     return date.toLocaleTimeString("en-US", {
       hour: "2-digit",
       minute: "2-digit",
@@ -45,6 +49,9 @@ export default function TransactionHistory({ transactions }: Props) {
     .filter((t) => t.type === "sell" && t.realized_gain !== null)
     .reduce((sum, t) => sum + (t.realized_gain ?? 0), 0);
 
+  const totalPages = Math.ceil(transactions.length / PAGE_SIZE);
+  const paginated = transactions.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
+
   return (
     <div className="bg-white border border-gray-200 rounded-xl p-4 sm:p-6 shadow-sm">
       <div className="flex items-center justify-between mb-4">
@@ -58,7 +65,7 @@ export default function TransactionHistory({ transactions }: Props) {
 
       {/* Mobile card view */}
       <div className="flex flex-col gap-3 md:hidden">
-        {transactions.map((t) => (
+        {paginated.map((t) => (
           <div
             key={t.id}
             className={`border rounded-lg p-4 ${
@@ -130,7 +137,7 @@ export default function TransactionHistory({ transactions }: Props) {
             </tr>
           </thead>
           <tbody>
-            {transactions.map((t) => (
+            {paginated.map((t) => (
               <tr key={t.id} className="border-b border-gray-100 hover:bg-blue-50/50">
                 <td className="py-3 px-2 text-gray-500 whitespace-nowrap">
                   <span>{fmtDate(t.created_at)}</span>
@@ -177,6 +184,30 @@ export default function TransactionHistory({ transactions }: Props) {
           </tbody>
         </table>
       </div>
+
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between mt-4 pt-3 border-t border-gray-200">
+          <span className="text-xs text-gray-400">
+            {page * PAGE_SIZE + 1}–{Math.min((page + 1) * PAGE_SIZE, transactions.length)} of {transactions.length}
+          </span>
+          <div className="flex gap-2">
+            <button
+              onClick={() => setPage(page - 1)}
+              disabled={page === 0}
+              className="text-xs px-3 py-1.5 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed transition"
+            >
+              Prev
+            </button>
+            <button
+              onClick={() => setPage(page + 1)}
+              disabled={page >= totalPages - 1}
+              className="text-xs px-3 py-1.5 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed transition"
+            >
+              Next
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

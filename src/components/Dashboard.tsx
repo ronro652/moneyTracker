@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import SummaryCards from "./SummaryCards";
 import PortfolioChart from "./PortfolioChart";
+import ProfitChart from "./ProfitChart";
 import HoldingsTable from "./HoldingsTable";
 import AddStockForm from "./AddStockForm";
 import PortfolioSidebar from "./PortfolioSidebar";
@@ -10,6 +11,7 @@ import PortfolioAllocation from "./PortfolioAllocation";
 import TransactionHistory from "./TransactionHistory";
 import DashboardSettings from "./DashboardSettings";
 import { useAuth } from "./AuthProvider";
+import { ToastProvider } from "./Toast";
 import { Holding, Portfolio, PortfolioSnapshot, Transaction, DashboardWidget, DEFAULT_WIDGETS } from "@/types";
 
 function loadWidgets(): DashboardWidget[] {
@@ -157,6 +159,8 @@ export default function Dashboard() {
         );
       case "chart":
         return <PortfolioChart key={widget.id} snapshots={snapshots} transactions={transactions} />;
+      case "profit-chart":
+        return <ProfitChart key={widget.id} snapshots={snapshots} />;
       case "allocation":
         return (
           <PortfolioAllocation
@@ -167,7 +171,7 @@ export default function Dashboard() {
           />
         );
       case "holdings":
-        return <HoldingsTable key={widget.id} holdings={holdings} onDelete={handleDelete} />;
+        return <HoldingsTable key={widget.id} holdings={holdings} portfolios={portfolios} activePortfolioId={activePortfolioId} onDelete={handleDelete} />;
       case "transactions":
         return <TransactionHistory key={widget.id} transactions={transactions} />;
       default:
@@ -176,6 +180,7 @@ export default function Dashboard() {
   };
 
   return (
+    <ToastProvider>
     <div className="min-h-screen bg-slate-50 text-gray-800">
       <header className="border-b border-gray-200 bg-white/80 backdrop-blur-md sticky top-0 z-10">
         <div className="max-w-[1400px] mx-auto px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between">
@@ -327,5 +332,6 @@ export default function Dashboard() {
         onClose={() => setShowSettings(false)}
       />
     </div>
+    </ToastProvider>
   );
 }
