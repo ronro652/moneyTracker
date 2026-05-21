@@ -1,27 +1,28 @@
-import { getDb } from "@/lib/db";
+import { db } from "@/lib/db";
+import { holdings, portfolios } from "@/lib/db/schema";
 import { requireAuth } from "@/lib/require-auth";
+import { eq, and } from "drizzle-orm";
 import { NextResponse } from "next/server";
 
 export async function DELETE(
   _req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: { id: string } },
 ) {
-  const auth = requireAuth();
+  const auth = await requireAuth();
   if (auth instanceof NextResponse) return auth;
 
   const { id } = params;
-  const db = getDb();
 
-  const holding = db.prepare(`
-    SELECT h.id FROM holdings h
-    JOIN portfolios p ON p.id = h.portfolio_id
-    WHERE h.id = ? AND p.user_id = ?
-  `).get(id, auth.user.id);
+  const rows = await db
+    .select({ id: holdings.id })
+    .from(holdings)
+    .innerJoin(portfolios, eq(portfolios.id, holdings.portfolioId))
+    .where(and(eq(holdings.id, Number(id)), eq(portfolios.userId, auth.user.id)));
 
-  if (!holding) {
+  if (rows.length === 0) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
-  db.prepare("DELETE FROM holdings WHERE id = ?").run(id);
+  await db.delete(holdings).where(eq(holdings.id, Number(id)));
   return NextResponse.json({ success: true });
 }

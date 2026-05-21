@@ -1,4 +1,4 @@
-import { searchTicker, searchCrypto } from "@/lib/alpha-vantage";
+import { searchTicker, searchCrypto } from "@/lib/finnhub";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(req: NextRequest) {

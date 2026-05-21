@@ -1,41 +1,42 @@
-import { getDb } from "./db";
-import { fetchStockQuote, fetchCryptoQuote } from "./alpha-vantage";
+import { db } from "./db";
+import {
+  users,
+  portfolios,
+  holdings,
+  stockPrices,
+  portfolioSnapshots,
+} from "./db/schema";
+import { eq, and, gt } from "drizzle-orm";
+import { fetchStockQuote, fetchCryptoQuote } from "./finnhub";
 
 const BUCKET_HOURS = 3;
 
 export async function refreshPricesAndSnapshot(userId: number) {
-  const db = getDb();
-  const holdings = db
-    .prepare(
-      `SELECT DISTINCT h.ticker, h.asset_type FROM holdings h
-       JOIN portfolios p ON p.id = h.portfolio_id
-       WHERE p.user_id = ?`
-    )
-    .all(userId) as { ticker: string; asset_type: string }[];
+  const userHoldings = await db
+    .selectDistinct({ ticker: holdings.ticker, assetType: holdings.assetType })
+    .from(holdings)
+    .innerJoin(portfolios, eq(portfolios.id, holdings.portfolioId))
+    .where(eq(portfolios.userId, userId));
 
   const results: Record<string, { price: number; changePercent: number }> = {};
 
-  for (const { ticker, asset_type } of holdings) {
+  for (const { ticker, assetType } of userHoldings) {
     if (results[ticker]) continue;
 
-    const cached = db
-      .prepare("SELECT * FROM stock_prices WHERE ticker = ?")
-      .get(ticker) as
-      | { price: number; change_percent: number; updated_at: string }
-      | undefined;
+    const cached = await db
+      .select()
+      .from(stockPrices)
+      .where(eq(stockPrices.ticker, ticker));
 
+    const cachedRow = cached[0];
     const isFresh =
-      cached &&
-      cached.updated_at >
-        new Date(Date.now() - 15 * 60 * 1000)
-          .toISOString()
-          .replace("T", " ")
-          .slice(0, 19);
+      cachedRow &&
+      cachedRow.updatedAt > new Date(Date.now() - 15 * 60 * 1000);
 
-    if (cached && isFresh) {
+    if (cachedRow && isFresh) {
       results[ticker] = {
-        price: cached.price,
-        changePercent: cached.change_percent,
+        price: cachedRow.price,
+        changePercent: cachedRow.changePercent,
       };
       continue;
     }
@@ -43,7 +44,7 @@ export async function refreshPricesAndSnapshot(userId: number) {
     let quote: Awaited<ReturnType<typeof fetchStockQuote>> = null;
     try {
       quote =
-        asset_type === "crypto"
+        assetType === "crypto"
           ? await fetchCryptoQuote(ticker)
           : await fetchStockQuote(ticker);
     } catch (e) {
@@ -51,40 +52,49 @@ export async function refreshPricesAndSnapshot(userId: number) {
     }
 
     if (quote) {
-      db.prepare(
-        `INSERT INTO stock_prices (ticker, price, change_percent, updated_at)
-         VALUES (?, ?, ?, datetime('now'))
-         ON CONFLICT(ticker) DO UPDATE SET
-           price = excluded.price,
-           change_percent = excluded.change_percent,
-           updated_at = excluded.updated_at`
-      ).run(ticker, quote.price, quote.changePercent);
+      await db
+        .insert(stockPrices)
+        .values({
+          ticker,
+          price: quote.price,
+          changePercent: quote.changePercent,
+          updatedAt: new Date(),
+        })
+        .onConflictDoUpdate({
+          target: stockPrices.ticker,
+          set: {
+            price: quote.price,
+            changePercent: quote.changePercent,
+            updatedAt: new Date(),
+          },
+        });
 
       results[ticker] = {
         price: quote.price,
         changePercent: quote.changePercent,
       };
-    } else if (cached) {
+    } else if (cachedRow) {
       results[ticker] = {
-        price: cached.price,
-        changePercent: cached.change_percent,
+        price: cachedRow.price,
+        changePercent: cachedRow.changePercent,
       };
     }
   }
 
-  const portfolios = db
-    .prepare("SELECT id FROM portfolios WHERE user_id = ?")
-    .all(userId) as { id: number }[];
+  const userPortfolios = await db
+    .select({ id: portfolios.id })
+    .from(portfolios)
+    .where(eq(portfolios.userId, userId));
+
   const now = new Date();
   const bucket = Math.floor(now.getUTCHours() / BUCKET_HOURS) * BUCKET_HOURS;
   const snapshotKey = `${now.toISOString().split("T")[0]} ${String(bucket).padStart(2, "0")}:00`;
 
-  for (const { id: pid } of portfolios) {
-    const portfolioHoldings = db
-      .prepare(
-        "SELECT ticker, shares, avg_cost FROM holdings WHERE portfolio_id = ?"
-      )
-      .all(pid) as { ticker: string; shares: number; avg_cost: number }[];
+  for (const { id: pid } of userPortfolios) {
+    const portfolioHoldings = await db
+      .select({ ticker: holdings.ticker, shares: holdings.shares, avgCost: holdings.avgCost })
+      .from(holdings)
+      .where(eq(holdings.portfolioId, pid));
 
     const totalValue = portfolioHoldings.reduce((sum, h) => {
       const price = results[h.ticker]?.price || 0;
@@ -92,18 +102,18 @@ export async function refreshPricesAndSnapshot(userId: number) {
     }, 0);
 
     const totalCost = portfolioHoldings.reduce(
-      (sum, h) => sum + h.shares * h.avg_cost,
-      0
+      (sum, h) => sum + h.shares * h.avgCost,
+      0,
     );
 
     if (portfolioHoldings.length > 0) {
-      db.prepare(
-        `INSERT INTO portfolio_snapshots (date, total_value, total_cost, portfolio_id)
-         VALUES (?, ?, ?, ?)
-         ON CONFLICT(date, portfolio_id) DO UPDATE SET
-           total_value = excluded.total_value,
-           total_cost = excluded.total_cost`
-      ).run(snapshotKey, totalValue, totalCost, pid);
+      await db
+        .insert(portfolioSnapshots)
+        .values({ date: snapshotKey, totalValue, totalCost, portfolioId: pid })
+        .onConflictDoUpdate({
+          target: [portfolioSnapshots.date, portfolioSnapshots.portfolioId],
+          set: { totalValue, totalCost },
+        });
     }
   }
 
@@ -112,24 +122,19 @@ export async function refreshPricesAndSnapshot(userId: number) {
 
 const MINUTE_LIMIT = 60;
 
-export function getApiQuota() {
-  const db = getDb();
-  const oneMinuteAgo = new Date(Date.now() - 60 * 1000)
-    .toISOString()
-    .replace("T", " ")
-    .slice(0, 19);
-  const row = db
-    .prepare(
-      "SELECT COUNT(*) as count FROM stock_prices WHERE updated_at >= ?"
-    )
-    .get(oneMinuteAgo) as { count: number };
-  return { used: row.count, limit: MINUTE_LIMIT, remaining: Math.max(0, MINUTE_LIMIT - row.count) };
+export async function getApiQuota() {
+  const oneMinuteAgo = new Date(Date.now() - 60 * 1000);
+  const rows = await db
+    .select()
+    .from(stockPrices)
+    .where(gt(stockPrices.updatedAt, oneMinuteAgo));
+  const used = rows.length;
+  return { used, limit: MINUTE_LIMIT, remaining: Math.max(0, MINUTE_LIMIT - used) };
 }
 
 export async function refreshAllUsers() {
-  const db = getDb();
-  const users = db.prepare("SELECT id FROM users").all() as { id: number }[];
-  for (const { id } of users) {
+  const allUsers = await db.select({ id: users.id }).from(users);
+  for (const { id } of allUsers) {
     try {
       await refreshPricesAndSnapshot(id);
     } catch (e) {
@@ -137,6 +142,6 @@ export async function refreshAllUsers() {
     }
   }
   console.log(
-    `[snapshot-cron] Completed for ${users.length} user(s) at ${new Date().toISOString()}`
+    `[snapshot-cron] Completed for ${allUsers.length} user(s) at ${new Date().toISOString()}`,
   );
 }

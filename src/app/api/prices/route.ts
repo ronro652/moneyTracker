@@ -3,19 +3,19 @@ import { refreshPricesAndSnapshot, getApiQuota } from "@/lib/snapshots";
 import { NextResponse } from "next/server";
 
 export async function POST() {
-  const auth = requireAuth();
+  const auth = await requireAuth();
   if (auth instanceof NextResponse) return auth;
 
   const results = await refreshPricesAndSnapshot(auth.user.id);
-  const quota = getApiQuota();
+  const quota = await getApiQuota();
 
   return NextResponse.json({ prices: results, quota });
 }
 
 export async function GET() {
-  const auth = requireAuth();
+  const auth = await requireAuth();
   if (auth instanceof NextResponse) return auth;
 
-  const quota = getApiQuota();
+  const quota = await getApiQuota();
   return NextResponse.json({ quota });
 }

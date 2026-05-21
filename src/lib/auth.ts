@@ -1,5 +1,7 @@
 import crypto from "crypto";
-import { getDb } from "./db";
+import { db } from "./db";
+import { sessions, users } from "./db/schema";
+import { eq, and, gt, lt } from "drizzle-orm";
 import { cookies } from "next/headers";
 
 const SESSION_COOKIE = "session_token";
@@ -17,11 +19,10 @@ export function verifyPassword(password: string, stored: string): boolean {
   return crypto.timingSafeEqual(Buffer.from(hash, "hex"), Buffer.from(attempt, "hex"));
 }
 
-export function createSession(userId: number): string {
-  const db = getDb();
+export async function createSession(userId: number): Promise<string> {
   const token = crypto.randomBytes(32).toString("hex");
-  const expiresAt = new Date(Date.now() + SESSION_MAX_AGE_DAYS * 24 * 60 * 60 * 1000).toISOString();
-  db.prepare("INSERT INTO sessions (id, user_id, expires_at) VALUES (?, ?, ?)").run(token, userId, expiresAt);
+  const expiresAt = new Date(Date.now() + SESSION_MAX_AGE_DAYS * 24 * 60 * 60 * 1000);
+  await db.insert(sessions).values({ id: token, userId, expiresAt });
   return token;
 }
 
@@ -41,29 +42,26 @@ export function clearSessionCookie() {
   cookieStore.delete(SESSION_COOKIE);
 }
 
-export function getSessionUser(): { id: number; email: string; name: string } | null {
+export async function getSessionUser(): Promise<{ id: number; email: string; name: string } | null> {
   const cookieStore = cookies();
   const token = cookieStore.get(SESSION_COOKIE)?.value;
   if (!token) return null;
 
-  const db = getDb();
-  const row = db.prepare(`
-    SELECT u.id, u.email, u.name
-    FROM sessions s
-    JOIN users u ON u.id = s.user_id
-    WHERE s.id = ? AND s.expires_at > datetime('now')
-  `).get(token) as { id: number; email: string; name: string } | undefined;
+  const rows = await db
+    .select({ id: users.id, email: users.email, name: users.name })
+    .from(sessions)
+    .innerJoin(users, eq(users.id, sessions.userId))
+    .where(and(eq(sessions.id, token), gt(sessions.expiresAt, new Date())));
 
-  if (!row) return null;
+  if (rows.length === 0) return null;
 
-  const newExpiry = new Date(Date.now() + SESSION_MAX_AGE_DAYS * 24 * 60 * 60 * 1000).toISOString();
-  db.prepare("UPDATE sessions SET expires_at = ? WHERE id = ?").run(newExpiry, token);
+  const newExpiry = new Date(Date.now() + SESSION_MAX_AGE_DAYS * 24 * 60 * 60 * 1000);
+  await db.update(sessions).set({ expiresAt: newExpiry }).where(eq(sessions.id, token));
   setSessionCookie(token);
 
-  return row;
+  return rows[0];
 }
 
-export function deleteExpiredSessions() {
-  const db = getDb();
-  db.prepare("DELETE FROM sessions WHERE expires_at <= datetime('now')").run();
+export async function deleteExpiredSessions() {
+  await db.delete(sessions).where(lt(sessions.expiresAt, new Date()));
 }

@@ -1,39 +1,38 @@
-import { getDb } from "@/lib/db";
+import { db } from "@/lib/db";
+import { users, portfolios } from "@/lib/db/schema";
 import { hashPassword, createSession, setSessionCookie } from "@/lib/auth";
+import { registerSchema } from "@/lib/validations";
+import { eq } from "drizzle-orm";
 import { NextRequest, NextResponse } from "next/server";
 import { PORTFOLIO_COLORS } from "@/types";
 
 export async function POST(req: NextRequest) {
-  const body = await req.json();
-  const { email, name, password } = body;
-
-  if (!email?.trim() || !name?.trim() || !password) {
-    return NextResponse.json({ error: "All fields are required" }, { status: 400 });
+  const parsed = registerSchema.safeParse(await req.json());
+  if (!parsed.success) {
+    return NextResponse.json({ error: parsed.error.issues[0].message }, { status: 400 });
   }
+  const { email, name, password } = parsed.data;
 
-  if (password.length < 6) {
-    return NextResponse.json({ error: "Password must be at least 6 characters" }, { status: 400 });
-  }
-
-  const db = getDb();
-  const existing = db.prepare("SELECT id FROM users WHERE email = ?").get(email.trim().toLowerCase());
-  if (existing) {
+  const existing = await db.select({ id: users.id }).from(users).where(eq(users.email, email));
+  if (existing.length > 0) {
     return NextResponse.json({ error: "Email already registered" }, { status: 409 });
   }
 
   const passwordHash = hashPassword(password);
-  const result = db.prepare(
-    "INSERT INTO users (email, name, password_hash) VALUES (?, ?, ?)"
-  ).run(email.trim().toLowerCase(), name.trim(), passwordHash);
+  const [user] = await db
+    .insert(users)
+    .values({ email, name, passwordHash })
+    .returning({ id: users.id });
 
-  const userId = result.lastInsertRowid as number;
+  await db.insert(portfolios).values({
+    name: "My Portfolio",
+    description: "Default portfolio",
+    color: PORTFOLIO_COLORS[0],
+    userId: user.id,
+  });
 
-  db.prepare(
-    "INSERT INTO portfolios (name, description, color, user_id) VALUES (?, ?, ?, ?)"
-  ).run("My Portfolio", "Default portfolio", PORTFOLIO_COLORS[0], userId);
-
-  const token = createSession(userId);
+  const token = await createSession(user.id);
   setSessionCookie(token);
 
-  return NextResponse.json({ id: userId, email: email.trim().toLowerCase(), name: name.trim() }, { status: 201 });
+  return NextResponse.json({ id: user.id, email, name }, { status: 201 });
 }

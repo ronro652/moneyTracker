@@ -1,5 +1,7 @@
-import { getDb } from "@/lib/db";
+import { db } from "@/lib/db";
+import { sessions } from "@/lib/db/schema";
 import { clearSessionCookie } from "@/lib/auth";
+import { eq } from "drizzle-orm";
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 
@@ -8,8 +10,7 @@ export async function POST() {
   const token = cookieStore.get("session_token")?.value;
 
   if (token) {
-    const db = getDb();
-    db.prepare("DELETE FROM sessions WHERE id = ?").run(token);
+    await db.delete(sessions).where(eq(sessions.id, token));
   }
 
   clearSessionCookie();

@@ -1,36 +1,45 @@
-import { getDb } from "@/lib/db";
+import { db } from "@/lib/db";
+import { portfolios } from "@/lib/db/schema";
 import { requireAuth } from "@/lib/require-auth";
+import { createPortfolioSchema } from "@/lib/validations";
+import { eq, sql } from "drizzle-orm";
 import { NextRequest, NextResponse } from "next/server";
 import { PORTFOLIO_COLORS } from "@/types";
 
 export async function GET() {
-  const auth = requireAuth();
+  const auth = await requireAuth();
   if (auth instanceof NextResponse) return auth;
 
-  const db = getDb();
-  const portfolios = db.prepare("SELECT * FROM portfolios WHERE user_id = ? ORDER BY created_at ASC").all(auth.user.id);
-  return NextResponse.json(portfolios);
+  const rows = await db
+    .select()
+    .from(portfolios)
+    .where(eq(portfolios.userId, auth.user.id))
+    .orderBy(sql`${portfolios.createdAt} asc`);
+
+  return NextResponse.json(rows);
 }
 
 export async function POST(req: NextRequest) {
-  const auth = requireAuth();
+  const auth = await requireAuth();
   if (auth instanceof NextResponse) return auth;
 
-  const body = await req.json();
-  const { name, description } = body;
-
-  if (!name || !name.trim()) {
-    return NextResponse.json({ error: "Name is required" }, { status: 400 });
+  const parsed = createPortfolioSchema.safeParse(await req.json());
+  if (!parsed.success) {
+    return NextResponse.json({ error: parsed.error.issues[0].message }, { status: 400 });
   }
+  const { name, description } = parsed.data;
 
-  const db = getDb();
-  const count = (db.prepare("SELECT COUNT(*) as c FROM portfolios WHERE user_id = ?").get(auth.user.id) as { c: number }).c;
+  const countRows = await db
+    .select({ count: sql<number>`count(*)` })
+    .from(portfolios)
+    .where(eq(portfolios.userId, auth.user.id));
+  const count = Number(countRows[0].count);
   const color = PORTFOLIO_COLORS[count % PORTFOLIO_COLORS.length];
 
-  const result = db.prepare(
-    "INSERT INTO portfolios (name, description, color, user_id) VALUES (?, ?, ?, ?)"
-  ).run(name.trim(), (description || "").trim(), color, auth.user.id);
+  const [portfolio] = await db
+    .insert(portfolios)
+    .values({ name, description, color, userId: auth.user.id })
+    .returning();
 
-  const portfolio = db.prepare("SELECT * FROM portfolios WHERE id = ?").get(result.lastInsertRowid);
   return NextResponse.json(portfolio, { status: 201 });
 }

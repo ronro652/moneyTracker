@@ -1,69 +1,87 @@
-import { getDb } from "@/lib/db";
+import { db } from "@/lib/db";
+import { holdings, portfolios, stockPrices } from "@/lib/db/schema";
 import { requireAuth } from "@/lib/require-auth";
+import { addHoldingSchema } from "@/lib/validations";
+import { eq, and, sql } from "drizzle-orm";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(req: NextRequest) {
-  const auth = requireAuth();
+  const auth = await requireAuth();
   if (auth instanceof NextResponse) return auth;
 
   const portfolioId = req.nextUrl.searchParams.get("portfolio_id");
-  const db = getDb();
 
-  let query = `
-    SELECT h.*, sp.price as current_price, sp.change_percent
-    FROM holdings h
-    JOIN portfolios p ON p.id = h.portfolio_id
-    LEFT JOIN stock_prices sp ON sp.ticker = h.ticker
-    WHERE p.user_id = ?
-  `;
-  const params: (string | number)[] = [auth.user.id];
-
+  const conditions = [eq(portfolios.userId, auth.user.id)];
   if (portfolioId) {
-    query += " AND h.portfolio_id = ?";
-    params.push(Number(portfolioId));
+    conditions.push(eq(holdings.portfolioId, Number(portfolioId)));
   }
 
-  query += " ORDER BY h.created_at DESC";
+  const rows = await db
+    .select({
+      id: holdings.id,
+      ticker: holdings.ticker,
+      name: holdings.name,
+      shares: holdings.shares,
+      avg_cost: holdings.avgCost,
+      portfolio_id: holdings.portfolioId,
+      asset_type: holdings.assetType,
+      created_at: holdings.createdAt,
+      current_price: stockPrices.price,
+      change_percent: stockPrices.changePercent,
+    })
+    .from(holdings)
+    .innerJoin(portfolios, eq(portfolios.id, holdings.portfolioId))
+    .leftJoin(stockPrices, eq(stockPrices.ticker, holdings.ticker))
+    .where(and(...conditions))
+    .orderBy(sql`${holdings.createdAt} desc`);
 
-  const holdings = db.prepare(query).all(...params);
-  return NextResponse.json(holdings);
+  return NextResponse.json(rows);
 }
 
 export async function POST(req: NextRequest) {
-  const auth = requireAuth();
+  const auth = await requireAuth();
   if (auth instanceof NextResponse) return auth;
 
-  const body = await req.json();
-  const { ticker, name, shares, avg_cost, portfolio_id, asset_type } = body;
-
-  if (!ticker || !shares || !avg_cost) {
-    return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+  const parsed = addHoldingSchema.safeParse(await req.json());
+  if (!parsed.success) {
+    return NextResponse.json({ error: parsed.error.issues[0].message }, { status: 400 });
   }
+  const { ticker, name, shares, avg_cost, portfolio_id, asset_type } = parsed.data;
 
-  const resolvedAssetType = asset_type === "crypto" ? "crypto" : "stock";
-
-  const db = getDb();
-
-  const portfolio = db.prepare("SELECT id FROM portfolios WHERE id = ? AND user_id = ?").get(
-    portfolio_id, auth.user.id
-  );
-  if (!portfolio) {
+  const portfolio = await db
+    .select({ id: portfolios.id })
+    .from(portfolios)
+    .where(and(eq(portfolios.id, portfolio_id), eq(portfolios.userId, auth.user.id)));
+  if (portfolio.length === 0) {
     return NextResponse.json({ error: "Portfolio not found" }, { status: 404 });
   }
 
-  const existing = db.prepare(
-    "SELECT * FROM holdings WHERE ticker = ? AND portfolio_id = ? AND asset_type = ?"
-  ).get(ticker, portfolio_id, resolvedAssetType) as Record<string, number> | undefined;
+  const existing = await db
+    .select()
+    .from(holdings)
+    .where(
+      and(
+        eq(holdings.ticker, ticker),
+        eq(holdings.portfolioId, portfolio_id),
+        eq(holdings.assetType, asset_type),
+      ),
+    );
 
-  if (existing) {
-    const totalShares = existing.shares + shares;
-    const totalCost = existing.shares * existing.avg_cost + shares * avg_cost;
+  if (existing.length > 0) {
+    const h = existing[0];
+    const totalShares = h.shares + shares;
+    const totalCost = h.shares * h.avgCost + shares * avg_cost;
     const newAvgCost = totalCost / totalShares;
-    db.prepare("UPDATE holdings SET shares = ?, avg_cost = ? WHERE id = ?").run(totalShares, newAvgCost, existing.id);
+    await db.update(holdings).set({ shares: totalShares, avgCost: newAvgCost }).where(eq(holdings.id, h.id));
   } else {
-    db.prepare(
-      "INSERT INTO holdings (ticker, name, shares, avg_cost, portfolio_id, asset_type) VALUES (?, ?, ?, ?, ?, ?)"
-    ).run(ticker.toUpperCase(), name || ticker.toUpperCase(), shares, avg_cost, portfolio_id, resolvedAssetType);
+    await db.insert(holdings).values({
+      ticker: ticker.toUpperCase(),
+      name: name || ticker.toUpperCase(),
+      shares,
+      avgCost: avg_cost,
+      portfolioId: portfolio_id,
+      assetType: asset_type,
+    });
   }
 
   return NextResponse.json({ success: true });

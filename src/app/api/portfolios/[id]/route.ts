@@ -1,71 +1,92 @@
-import { getDb } from "@/lib/db";
+import { db } from "@/lib/db";
+import { portfolios, holdings, portfolioSnapshots } from "@/lib/db/schema";
 import { requireAuth } from "@/lib/require-auth";
+import { updatePortfolioSchema } from "@/lib/validations";
+import { eq, and, sql } from "drizzle-orm";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(
   _req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: { id: string } },
 ) {
-  const auth = requireAuth();
+  const auth = await requireAuth();
   if (auth instanceof NextResponse) return auth;
 
-  const { id } = params;
-  const db = getDb();
-  const portfolio = db.prepare("SELECT * FROM portfolios WHERE id = ? AND user_id = ?").get(id, auth.user.id);
-  if (!portfolio) {
+  const rows = await db
+    .select()
+    .from(portfolios)
+    .where(and(eq(portfolios.id, Number(params.id)), eq(portfolios.userId, auth.user.id)));
+
+  if (rows.length === 0) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
-  return NextResponse.json(portfolio);
+  return NextResponse.json(rows[0]);
 }
 
 export async function PUT(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: { id: string } },
 ) {
-  const auth = requireAuth();
+  const auth = await requireAuth();
   if (auth instanceof NextResponse) return auth;
 
-  const { id } = params;
-  const body = await req.json();
-  const { name, description, color } = body;
+  const parsed = updatePortfolioSchema.safeParse(await req.json());
+  if (!parsed.success) {
+    return NextResponse.json({ error: parsed.error.issues[0].message }, { status: 400 });
+  }
 
-  const db = getDb();
-  const existing = db.prepare("SELECT * FROM portfolios WHERE id = ? AND user_id = ?").get(id, auth.user.id);
-  if (!existing) {
+  const existing = await db
+    .select()
+    .from(portfolios)
+    .where(and(eq(portfolios.id, Number(params.id)), eq(portfolios.userId, auth.user.id)));
+
+  if (existing.length === 0) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
-  db.prepare(
-    "UPDATE portfolios SET name = COALESCE(?, name), description = COALESCE(?, description), color = COALESCE(?, color) WHERE id = ?"
-  ).run(name ?? null, description ?? null, color ?? null, id);
+  const updates: Record<string, string> = {};
+  if (parsed.data.name !== undefined) updates.name = parsed.data.name;
+  if (parsed.data.description !== undefined) updates.description = parsed.data.description;
+  if (parsed.data.color !== undefined) updates.color = parsed.data.color;
 
-  const updated = db.prepare("SELECT * FROM portfolios WHERE id = ?").get(id);
+  if (Object.keys(updates).length > 0) {
+    await db.update(portfolios).set(updates).where(eq(portfolios.id, Number(params.id)));
+  }
+
+  const [updated] = await db.select().from(portfolios).where(eq(portfolios.id, Number(params.id)));
   return NextResponse.json(updated);
 }
 
 export async function DELETE(
   _req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: { id: string } },
 ) {
-  const auth = requireAuth();
+  const auth = await requireAuth();
   if (auth instanceof NextResponse) return auth;
 
-  const { id } = params;
-  const db = getDb();
+  const id = Number(params.id);
 
-  const count = (db.prepare("SELECT COUNT(*) as c FROM portfolios WHERE user_id = ?").get(auth.user.id) as { c: number }).c;
-  if (count <= 1) {
+  const countRows = await db
+    .select({ count: sql<number>`count(*)` })
+    .from(portfolios)
+    .where(eq(portfolios.userId, auth.user.id));
+
+  if (Number(countRows[0].count) <= 1) {
     return NextResponse.json({ error: "Cannot delete the last portfolio" }, { status: 400 });
   }
 
-  const portfolio = db.prepare("SELECT id FROM portfolios WHERE id = ? AND user_id = ?").get(id, auth.user.id);
-  if (!portfolio) {
+  const existing = await db
+    .select({ id: portfolios.id })
+    .from(portfolios)
+    .where(and(eq(portfolios.id, id), eq(portfolios.userId, auth.user.id)));
+
+  if (existing.length === 0) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
-  db.prepare("DELETE FROM holdings WHERE portfolio_id = ?").run(id);
-  db.prepare("DELETE FROM portfolio_snapshots WHERE portfolio_id = ?").run(id);
-  db.prepare("DELETE FROM portfolios WHERE id = ?").run(id);
+  await db.delete(holdings).where(eq(holdings.portfolioId, id));
+  await db.delete(portfolioSnapshots).where(eq(portfolioSnapshots.portfolioId, id));
+  await db.delete(portfolios).where(eq(portfolios.id, id));
 
   return NextResponse.json({ success: true });
 }

@@ -1,45 +1,44 @@
-import { getDb } from "@/lib/db";
-import { fetchExchangeRate } from "@/lib/alpha-vantage";
+import { db } from "@/lib/db";
+import { exchangeRates } from "@/lib/db/schema";
+import { fetchExchangeRate } from "@/lib/finnhub";
 import { requireAuth } from "@/lib/require-auth";
+import { eq, and, gt } from "drizzle-orm";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(req: NextRequest) {
-  const auth = requireAuth();
+  const auth = await requireAuth();
   if (auth instanceof NextResponse) return auth;
 
   const from = req.nextUrl.searchParams.get("from") || "USD";
   const to = req.nextUrl.searchParams.get("to") || "ILS";
   const cacheKey = `${from}_${to}`;
 
-  const db = getDb();
+  const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
+  const cached = await db
+    .select({ rate: exchangeRates.rate })
+    .from(exchangeRates)
+    .where(and(eq(exchangeRates.pair, cacheKey), gt(exchangeRates.updatedAt, oneHourAgo)));
 
-  db.exec(`
-    CREATE TABLE IF NOT EXISTS exchange_rates (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      pair TEXT NOT NULL UNIQUE,
-      rate REAL NOT NULL,
-      updated_at TEXT NOT NULL DEFAULT (datetime('now'))
-    )
-  `);
-
-  const cached = db.prepare(
-    "SELECT rate FROM exchange_rates WHERE pair = ? AND updated_at > datetime('now', '-1 hour')"
-  ).get(cacheKey) as { rate: number } | undefined;
-
-  if (cached) {
-    return NextResponse.json({ rate: cached.rate, from, to });
+  if (cached.length > 0) {
+    return NextResponse.json({ rate: cached[0].rate, from, to });
   }
 
   const rate = await fetchExchangeRate(from, to);
   if (rate === null) {
-    const stale = db.prepare("SELECT rate FROM exchange_rates WHERE pair = ?").get(cacheKey) as { rate: number } | undefined;
-    return NextResponse.json({ rate: stale?.rate ?? 3.6, from, to });
+    const stale = await db
+      .select({ rate: exchangeRates.rate })
+      .from(exchangeRates)
+      .where(eq(exchangeRates.pair, cacheKey));
+    return NextResponse.json({ rate: stale[0]?.rate ?? 3.6, from, to });
   }
 
-  db.prepare(`
-    INSERT INTO exchange_rates (pair, rate, updated_at) VALUES (?, ?, datetime('now'))
-    ON CONFLICT(pair) DO UPDATE SET rate = excluded.rate, updated_at = excluded.updated_at
-  `).run(cacheKey, rate);
+  await db
+    .insert(exchangeRates)
+    .values({ pair: cacheKey, rate, updatedAt: new Date() })
+    .onConflictDoUpdate({
+      target: exchangeRates.pair,
+      set: { rate, updatedAt: new Date() },
+    });
 
   return NextResponse.json({ rate, from, to });
 }

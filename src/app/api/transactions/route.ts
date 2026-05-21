@@ -1,108 +1,150 @@
-import { getDb } from "@/lib/db";
+import { db } from "@/lib/db";
+import { investmentTransactions, holdings, portfolios } from "@/lib/db/schema";
 import { requireAuth } from "@/lib/require-auth";
+import { createTransactionSchema } from "@/lib/validations";
+import { eq, and, sql } from "drizzle-orm";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(req: NextRequest) {
-  const auth = requireAuth();
+  const auth = await requireAuth();
   if (auth instanceof NextResponse) return auth;
 
   const portfolioId = req.nextUrl.searchParams.get("portfolio_id");
-  const db = getDb();
 
-  let query = `
-    SELECT t.* FROM transactions t
-    JOIN portfolios p ON p.id = t.portfolio_id
-    WHERE p.user_id = ?
-  `;
-  const params: (string | number)[] = [auth.user.id];
-
+  const conditions = [eq(portfolios.userId, auth.user.id)];
   if (portfolioId) {
-    query += " AND t.portfolio_id = ?";
-    params.push(Number(portfolioId));
+    conditions.push(eq(investmentTransactions.portfolioId, Number(portfolioId)));
   }
 
-  query += " ORDER BY t.created_at DESC";
+  const rows = await db
+    .select({
+      id: investmentTransactions.id,
+      portfolio_id: investmentTransactions.portfolioId,
+      ticker: investmentTransactions.ticker,
+      name: investmentTransactions.name,
+      asset_type: investmentTransactions.assetType,
+      type: investmentTransactions.type,
+      shares: investmentTransactions.shares,
+      price_per_share: investmentTransactions.pricePerShare,
+      total_amount: investmentTransactions.totalAmount,
+      realized_gain: investmentTransactions.realizedGain,
+      created_at: investmentTransactions.createdAt,
+    })
+    .from(investmentTransactions)
+    .innerJoin(portfolios, eq(portfolios.id, investmentTransactions.portfolioId))
+    .where(and(...conditions))
+    .orderBy(sql`${investmentTransactions.createdAt} desc`);
 
-  const transactions = db.prepare(query).all(...params);
-  return NextResponse.json(transactions);
+  return NextResponse.json(rows);
 }
 
 export async function POST(req: NextRequest) {
-  const auth = requireAuth();
+  const auth = await requireAuth();
   if (auth instanceof NextResponse) return auth;
 
-  const body = await req.json();
-  const { ticker, name, shares, price_per_share, portfolio_id, asset_type, type } = body;
-
-  if (!ticker || !shares || !price_per_share || !type) {
-    return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+  const parsed = createTransactionSchema.safeParse(await req.json());
+  if (!parsed.success) {
+    return NextResponse.json({ error: parsed.error.issues[0].message }, { status: 400 });
   }
+  const { ticker, name, shares, price_per_share, portfolio_id, asset_type, type } = parsed.data;
 
-  if (type !== "buy" && type !== "sell") {
-    return NextResponse.json({ error: "Type must be buy or sell" }, { status: 400 });
-  }
+  const portfolio = await db
+    .select({ id: portfolios.id })
+    .from(portfolios)
+    .where(and(eq(portfolios.id, portfolio_id), eq(portfolios.userId, auth.user.id)));
 
-  const resolvedAssetType = asset_type === "crypto" ? "crypto" : "stock";
-  const db = getDb();
-
-  const portfolio = db.prepare("SELECT id FROM portfolios WHERE id = ? AND user_id = ?").get(
-    portfolio_id, auth.user.id
-  ) as { id: number } | undefined;
-  if (!portfolio) {
+  if (portfolio.length === 0) {
     return NextResponse.json({ error: "Portfolio not found" }, { status: 404 });
   }
 
   const totalAmount = shares * price_per_share;
+  const tickerUpper = ticker.toUpperCase();
+  const holdingName = name || tickerUpper;
 
   if (type === "sell") {
-    const holding = db.prepare(
-      "SELECT * FROM holdings WHERE ticker = ? AND portfolio_id = ? AND asset_type = ?"
-    ).get(ticker, portfolio_id, resolvedAssetType) as { id: number; shares: number; avg_cost: number } | undefined;
+    const existing = await db
+      .select()
+      .from(holdings)
+      .where(
+        and(
+          eq(holdings.ticker, tickerUpper),
+          eq(holdings.portfolioId, portfolio_id),
+          eq(holdings.assetType, asset_type),
+        ),
+      );
 
+    const holding = existing[0];
     if (!holding || holding.shares < shares) {
       return NextResponse.json(
         { error: `Not enough shares to sell. You have ${holding?.shares ?? 0}` },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
-    const realizedGain = (price_per_share - holding.avg_cost) * shares;
+    const realizedGain = (price_per_share - holding.avgCost) * shares;
     const remainingShares = holding.shares - shares;
 
     if (remainingShares < 0.0001) {
-      db.prepare("DELETE FROM holdings WHERE id = ?").run(holding.id);
+      await db.delete(holdings).where(eq(holdings.id, holding.id));
     } else {
-      db.prepare("UPDATE holdings SET shares = ? WHERE id = ?").run(remainingShares, holding.id);
+      await db.update(holdings).set({ shares: remainingShares }).where(eq(holdings.id, holding.id));
     }
 
-    db.prepare(`
-      INSERT INTO transactions (portfolio_id, ticker, name, asset_type, type, shares, price_per_share, total_amount, realized_gain)
-      VALUES (?, ?, ?, ?, 'sell', ?, ?, ?, ?)
-    `).run(portfolio_id, ticker.toUpperCase(), name || ticker.toUpperCase(), resolvedAssetType, shares, price_per_share, totalAmount, realizedGain);
+    await db.insert(investmentTransactions).values({
+      portfolioId: portfolio_id,
+      ticker: tickerUpper,
+      name: holdingName,
+      assetType: asset_type,
+      type: "sell",
+      shares,
+      pricePerShare: price_per_share,
+      totalAmount,
+      realizedGain,
+    });
 
     return NextResponse.json({ success: true, realized_gain: realizedGain });
   }
 
   // Buy
-  const existing = db.prepare(
-    "SELECT * FROM holdings WHERE ticker = ? AND portfolio_id = ? AND asset_type = ?"
-  ).get(ticker, portfolio_id, resolvedAssetType) as { id: number; shares: number; avg_cost: number } | undefined;
+  const existing = await db
+    .select()
+    .from(holdings)
+    .where(
+      and(
+        eq(holdings.ticker, tickerUpper),
+        eq(holdings.portfolioId, portfolio_id),
+        eq(holdings.assetType, asset_type),
+      ),
+    );
 
-  if (existing) {
-    const totalShares = existing.shares + shares;
-    const totalCost = existing.shares * existing.avg_cost + shares * price_per_share;
+  if (existing.length > 0) {
+    const h = existing[0];
+    const totalShares = h.shares + shares;
+    const totalCost = h.shares * h.avgCost + shares * price_per_share;
     const newAvgCost = totalCost / totalShares;
-    db.prepare("UPDATE holdings SET shares = ?, avg_cost = ? WHERE id = ?").run(totalShares, newAvgCost, existing.id);
+    await db.update(holdings).set({ shares: totalShares, avgCost: newAvgCost }).where(eq(holdings.id, h.id));
   } else {
-    db.prepare(
-      "INSERT INTO holdings (ticker, name, shares, avg_cost, portfolio_id, asset_type) VALUES (?, ?, ?, ?, ?, ?)"
-    ).run(ticker.toUpperCase(), name || ticker.toUpperCase(), shares, price_per_share, portfolio_id, resolvedAssetType);
+    await db.insert(holdings).values({
+      ticker: tickerUpper,
+      name: holdingName,
+      shares,
+      avgCost: price_per_share,
+      portfolioId: portfolio_id,
+      assetType: asset_type,
+    });
   }
 
-  db.prepare(`
-    INSERT INTO transactions (portfolio_id, ticker, name, asset_type, type, shares, price_per_share, total_amount, realized_gain)
-    VALUES (?, ?, ?, ?, 'buy', ?, ?, ?, NULL)
-  `).run(portfolio_id, ticker.toUpperCase(), name || ticker.toUpperCase(), resolvedAssetType, shares, price_per_share, totalAmount);
+  await db.insert(investmentTransactions).values({
+    portfolioId: portfolio_id,
+    ticker: tickerUpper,
+    name: holdingName,
+    assetType: asset_type,
+    type: "buy",
+    shares,
+    pricePerShare: price_per_share,
+    totalAmount,
+    realizedGain: null,
+  });
 
   return NextResponse.json({ success: true });
 }
