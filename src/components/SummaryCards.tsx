@@ -33,7 +33,7 @@ export default function SummaryCards({ holdings, transactions = [], ilsRate }: P
   let cagr: number | null = null;
   if (firstBuyDate && totalCost > 0) {
     const years = (Date.now() - new Date(firstBuyDate).getTime()) / (365.25 * 24 * 60 * 60 * 1000);
-    if (years >= 0.01) {
+    if (years >= 1) {
       const totalReturn = 1 + totalReturnPct / 100;
       cagr = totalReturn > 0 ? (Math.pow(totalReturn, 1 / years) - 1) * 100 : 0;
     }
@@ -88,7 +88,7 @@ export default function SummaryCards({ holdings, transactions = [], ilsRate }: P
     {
       label: "Total Return",
       value: `${totalReturnPct >= 0 ? "+" : ""}${totalReturnPct.toFixed(2)}%`,
-      sub: cagr !== null ? `CAGR: ${cagr >= 0 ? "+" : ""}${cagr.toFixed(2)}%/yr` : "Overall return on invested capital",
+      sub: cagr !== null ? `CAGR: ${cagr >= 0 ? "+" : ""}${cagr.toFixed(2)}%/yr` : "CAGR available after 1 year",
       color: totalReturnPct >= 0 ? "text-emerald-600" : "text-red-500",
     },
     {
