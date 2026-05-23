@@ -13,14 +13,51 @@ interface Props {
 
 type SortKey = "value" | "day" | "gainPct" | "ticker";
 
-function getFields(h: Holding) {
-  const price = h.current_price || 0;
-  const value = price * h.shares;
-  const gain = (price - h.avg_cost) * h.shares;
-  const gainPct = h.avg_cost > 0 ? ((price - h.avg_cost) / h.avg_cost) * 100 : 0;
-  const dayChange = h.change_percent || 0;
-  const dayDollar = price > 0 ? (price / (1 + dayChange / 100) * h.shares * (dayChange / 100)) : 0;
-  return { price, value, gain, gainPct, dayChange, dayDollar };
+interface AggregatedHolding {
+  ticker: string;
+  name: string;
+  shares: number;
+  totalCost: number;
+  avgCost: number;
+  price: number;
+  asset_type: "stock" | "crypto";
+  dayChange: number;
+  portfolioIds: number[];
+}
+
+function aggregateHoldings(holdings: Holding[]): AggregatedHolding[] {
+  const map = new Map<string, AggregatedHolding>();
+  for (const h of holdings) {
+    const existing = map.get(h.ticker);
+    if (existing) {
+      existing.totalCost += h.avg_cost * h.shares;
+      existing.shares += h.shares;
+      existing.avgCost = existing.shares > 0 ? existing.totalCost / existing.shares : 0;
+      if (!existing.portfolioIds.includes(h.portfolio_id)) {
+        existing.portfolioIds.push(h.portfolio_id);
+      }
+    } else {
+      map.set(h.ticker, {
+        ticker: h.ticker,
+        name: h.name,
+        shares: h.shares,
+        totalCost: h.avg_cost * h.shares,
+        avgCost: h.avg_cost,
+        price: h.current_price || 0,
+        asset_type: h.asset_type,
+        dayChange: h.change_percent || 0,
+        portfolioIds: [h.portfolio_id],
+      });
+    }
+  }
+  return Array.from(map.values());
+}
+
+function getAggFields(h: AggregatedHolding) {
+  const value = h.price * h.shares;
+  const gain = (h.price - h.avgCost) * h.shares;
+  const gainPct = h.avgCost > 0 ? ((h.price - h.avgCost) / h.avgCost) * 100 : 0;
+  return { value, gain, gainPct };
 }
 
 const fmt = (n: number) =>
@@ -65,25 +102,19 @@ export default function StockMonitor({ holdings, portfolios, refreshing, lastUpd
   const totalGainPct = totalCost > 0 ? (totalGain / totalCost) * 100 : 0;
 
   const sorted = useMemo(() => {
-    const arr = [...holdings];
-    arr.sort((a, b) => {
-      const af = getFields(a);
-      const bf = getFields(b);
+    const agg = aggregateHoldings(holdings);
+    agg.sort((a, b) => {
+      const af = getAggFields(a);
+      const bf = getAggFields(b);
       switch (sortKey) {
         case "value": return bf.value - af.value;
-        case "day": return bf.dayChange - af.dayChange;
+        case "day": return b.dayChange - a.dayChange;
         case "gainPct": return bf.gainPct - af.gainPct;
         case "ticker": return a.ticker.localeCompare(b.ticker);
       }
     });
-    return arr;
+    return agg;
   }, [holdings, sortKey]);
-
-  const portfolioMap = useMemo(() => {
-    const m = new Map<number, Portfolio>();
-    for (const p of portfolios) m.set(p.id, p);
-    return m;
-  }, [portfolios]);
 
   if (holdings.length === 0) {
     return (
@@ -157,65 +188,56 @@ export default function StockMonitor({ holdings, portfolios, refreshing, lastUpd
       </div>
 
       {/* Stock list */}
-      <div className="space-y-2">
+      <div className="space-y-2.5">
         {sorted.map((h) => {
-          const { price, value, gain, gainPct, dayChange, dayDollar } = getFields(h);
-          const portfolio = portfolioMap.get(h.portfolio_id);
+          const { value, gain, gainPct } = getAggFields(h);
 
           return (
             <div
-              key={h.id}
-              className="bg-white border border-gray-200 rounded-xl px-4 py-3.5 shadow-sm hover:shadow-md transition-shadow"
+              key={h.ticker}
+              className="bg-white border border-gray-200 rounded-xl px-5 py-4 shadow-sm hover:shadow-md transition-shadow"
             >
               <div className="flex items-center justify-between">
                 {/* Left: ticker + name */}
                 <div className="min-w-0 flex-1 mr-3">
-                  <div className="flex items-center gap-1.5">
-                    <span className="font-bold text-gray-900">{h.ticker}</span>
+                  <div className="flex items-center gap-2">
+                    <span className="font-bold text-gray-900 text-lg">{h.ticker}</span>
                     {h.asset_type === "crypto" && (
                       <span className="text-[10px] font-medium bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded">
                         CRYPTO
                       </span>
                     )}
-                    {portfolios.length > 1 && portfolio && (
-                      <span
-                        className="text-[10px] font-medium px-1.5 py-0.5 rounded text-white"
-                        style={{ backgroundColor: portfolio.color }}
-                      >
-                        {portfolio.name}
-                      </span>
-                    )}
                   </div>
-                  <p className="text-xs text-gray-400 truncate">{h.name}</p>
+                  <p className="text-sm text-gray-500 truncate">{h.name}</p>
                 </div>
 
                 {/* Right: price + day change */}
                 <div className="text-right flex-shrink-0">
-                  <p className="font-semibold text-gray-900">
-                    {price > 0 ? fmt(price) : "—"}
+                  <p className="font-bold text-gray-900 text-lg">
+                    {h.price > 0 ? fmt(h.price) : "—"}
                   </p>
-                  {price > 0 && (
-                    <p className={`text-xs font-medium ${dayChange >= 0 ? "text-emerald-600" : "text-red-500"}`}>
-                      {dayChange >= 0 ? "+" : ""}{dayChange.toFixed(2)}%
+                  {h.price > 0 && (
+                    <p className={`text-sm font-semibold ${h.dayChange >= 0 ? "text-emerald-600" : "text-red-500"}`}>
+                      {h.dayChange >= 0 ? "+" : ""}{h.dayChange.toFixed(2)}%
                     </p>
                   )}
                 </div>
               </div>
 
               {/* Bottom row: value, shares, gain */}
-              {price > 0 && (
-                <div className="flex items-center justify-between mt-2.5 pt-2.5 border-t border-gray-100 text-sm">
+              {h.price > 0 && (
+                <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-100">
                   <div>
                     <span className="text-gray-400 text-xs">Value</span>
-                    <p className="text-gray-700 font-medium">{fmtCompact(value)}</p>
+                    <p className="text-gray-800 font-semibold text-sm">{fmtCompact(value)}</p>
                   </div>
                   <div>
                     <span className="text-gray-400 text-xs">Shares</span>
-                    <p className="text-gray-700">{h.shares}</p>
+                    <p className="text-gray-700 text-sm">{h.shares}</p>
                   </div>
                   <div className="text-right">
                     <span className="text-gray-400 text-xs">Gain/Loss</span>
-                    <p className={`font-medium ${gain >= 0 ? "text-emerald-600" : "text-red-500"}`}>
+                    <p className={`font-semibold text-sm ${gain >= 0 ? "text-emerald-600" : "text-red-500"}`}>
                       {gain >= 0 ? "+" : ""}{fmtCompact(gain)}
                       <span className="text-xs opacity-75 ml-0.5">({gainPct >= 0 ? "+" : ""}{gainPct.toFixed(1)}%)</span>
                     </p>
