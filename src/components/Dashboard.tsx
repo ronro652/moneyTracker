@@ -9,11 +9,12 @@ import AddStockForm from "./AddStockForm";
 import PortfolioSidebar from "./PortfolioSidebar";
 import PortfolioAllocation from "./PortfolioAllocation";
 import TransactionHistory from "./TransactionHistory";
+import DividendHistory from "./DividendHistory";
 import DashboardSettings from "./DashboardSettings";
 import StockMonitor from "./StockMonitor";
 import { useAuth } from "./AuthProvider";
 import { ToastProvider } from "./Toast";
-import { Holding, Portfolio, PortfolioSnapshot, Transaction, DashboardWidget, DEFAULT_WIDGETS } from "@/types";
+import { Holding, Portfolio, PortfolioSnapshot, Transaction, Dividend, DashboardWidget, DEFAULT_WIDGETS } from "@/types";
 
 type View = "monitor" | "dashboard";
 
@@ -41,6 +42,7 @@ export default function Dashboard() {
   const [holdings, setHoldings] = useState<Holding[]>([]);
   const [snapshots, setSnapshots] = useState<PortfolioSnapshot[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [dividends, setDividends] = useState<Dividend[]>([]);
   const [ilsRate, setIlsRate] = useState<number | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [lastUpdated, setLastUpdated] = useState<string | null>(null);
@@ -94,6 +96,15 @@ export default function Dashboard() {
     setTransactions(data);
   }, [activePortfolioId]);
 
+  const fetchDividends = useCallback(async () => {
+    const url = activePortfolioId
+      ? `/api/dividends?portfolio_id=${activePortfolioId}`
+      : "/api/dividends";
+    const res = await fetch(url);
+    const data = await res.json();
+    setDividends(data);
+  }, [activePortfolioId]);
+
   const fetchIlsRate = useCallback(async () => {
     const res = await fetch("/api/exchange-rate?from=USD&to=ILS");
     const data = await res.json();
@@ -111,11 +122,11 @@ export default function Dashboard() {
     const res = await fetch("/api/prices", { method: "POST" });
     const data = await res.json();
     if (data.quota) setApiQuota(data.quota);
-    await Promise.all([fetchHoldings(), fetchSnapshots(), fetchTransactions()]);
+    await Promise.all([fetchHoldings(), fetchSnapshots(), fetchTransactions(), fetchDividends()]);
     lastRefreshRef.current = Date.now();
     setLastUpdated(new Date().toLocaleTimeString());
     setRefreshing(false);
-  }, [fetchHoldings, fetchSnapshots, fetchTransactions]);
+  }, [fetchHoldings, fetchSnapshots, fetchTransactions, fetchDividends]);
 
   const throttledRefresh = useCallback(() => {
     const elapsed = Date.now() - lastRefreshRef.current;
@@ -144,7 +155,8 @@ export default function Dashboard() {
     fetchHoldings();
     fetchSnapshots();
     fetchTransactions();
-  }, [fetchHoldings, fetchSnapshots, fetchTransactions]);
+    fetchDividends();
+  }, [fetchHoldings, fetchSnapshots, fetchTransactions, fetchDividends]);
 
   const handleDelete = async (id: number) => {
     await fetch(`/api/holdings/${id}`, { method: "DELETE" });
@@ -152,7 +164,7 @@ export default function Dashboard() {
   };
 
   const handleAdded = async () => {
-    await Promise.all([fetchHoldings(), fetchTransactions()]);
+    await Promise.all([fetchHoldings(), fetchTransactions(), fetchDividends()]);
     await refreshPrices();
   };
 
@@ -161,6 +173,7 @@ export default function Dashboard() {
     fetchHoldings();
     fetchSnapshots();
     fetchTransactions();
+    fetchDividends();
   };
 
   const activePortfolio = portfolios.find((p) => p.id === activePortfolioId);
@@ -173,7 +186,7 @@ export default function Dashboard() {
   const renderWidget = (widget: DashboardWidget) => {
     switch (widget.type) {
       case "summary":
-        return <SummaryCards key={widget.id} holdings={holdings} transactions={transactions} ilsRate={ilsRate} />;
+        return <SummaryCards key={widget.id} holdings={holdings} transactions={transactions} dividends={dividends} ilsRate={ilsRate} />;
       case "add-stock":
         return (
           <div key={widget.id} className="hidden md:block">
@@ -197,6 +210,8 @@ export default function Dashboard() {
         return <HoldingsTable key={widget.id} holdings={holdings} portfolios={portfolios} activePortfolioId={activePortfolioId} onDelete={handleDelete} />;
       case "transactions":
         return <TransactionHistory key={widget.id} transactions={transactions} />;
+      case "dividends":
+        return <DividendHistory key={widget.id} dividends={dividends} />;
       default:
         return null;
     }

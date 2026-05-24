@@ -8,6 +8,14 @@ export interface StockQuote {
   name: string;
 }
 
+export interface FinnhubDividend {
+  symbol: string;
+  date: string;
+  amount: number;
+  payDate: string;
+  currency: string;
+}
+
 export async function fetchStockQuote(ticker: string): Promise<StockQuote | null> {
   try {
     const url = `${BASE_URL}/quote?symbol=${encodeURIComponent(ticker)}&token=${API_KEY}`;
@@ -147,6 +155,28 @@ export async function fetchExchangeRate(from: string, to: string): Promise<numbe
     return data.quote[to];
   } catch {
     return null;
+  }
+}
+
+export async function fetchDividends(
+  ticker: string,
+  from: string,
+  to: string,
+): Promise<FinnhubDividend[]> {
+  try {
+    const url = `${BASE_URL}/stock/dividend?symbol=${encodeURIComponent(ticker)}&from=${from}&to=${to}&token=${API_KEY}`;
+    const res = await fetch(url);
+    const data = await res.json();
+    if (!Array.isArray(data)) return [];
+    return data.map((d: Record<string, unknown>) => ({
+      symbol: d.symbol as string,
+      date: d.date as string,
+      amount: d.amount as number,
+      payDate: d.payDate as string,
+      currency: d.currency as string,
+    }));
+  } catch {
+    return [];
   }
 }
 

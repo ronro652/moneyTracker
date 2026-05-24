@@ -52,12 +52,28 @@ export interface Transaction {
   created_at: string;
 }
 
+export type DividendSource = "manual" | "api";
+
+export interface Dividend {
+  id: number;
+  portfolio_id: number;
+  holding_id: number | null;
+  ticker: string;
+  amount: number;
+  dividend_per_share: number;
+  shares: number;
+  ex_date: string;
+  pay_date: string | null;
+  source: DividendSource;
+  created_at: string;
+}
+
 export interface PriceData {
   price: number;
   changePercent: number;
 }
 
-export type WidgetType = "summary" | "chart" | "profit-chart" | "holdings" | "add-stock" | "allocation" | "transactions";
+export type WidgetType = "summary" | "chart" | "profit-chart" | "holdings" | "add-stock" | "allocation" | "transactions" | "dividends";
 
 export interface DashboardWidget {
   id: string;
@@ -79,6 +95,7 @@ export const DEFAULT_WIDGETS: DashboardWidget[] = [
   { id: "allocation", type: "allocation", label: "Portfolio Allocation", visible: true, order: 4 },
   { id: "holdings", type: "holdings", label: "Holdings Table", visible: true, order: 5 },
   { id: "transactions", type: "transactions", label: "Transaction History", visible: true, order: 6 },
+  { id: "dividends", type: "dividends", label: "Dividend History", visible: true, order: 7 },
 ];
 
 export const PORTFOLIO_COLORS = [

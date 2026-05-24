@@ -5,9 +5,10 @@ import {
   holdings,
   stockPrices,
   portfolioSnapshots,
+  dividends,
 } from "./db/schema";
 import { eq, and, gt } from "drizzle-orm";
-import { fetchStockQuote, fetchCryptoQuote } from "./finnhub";
+import { fetchStockQuote, fetchCryptoQuote, fetchDividends } from "./finnhub";
 
 const BUCKET_HOURS = 3;
 
@@ -132,11 +133,70 @@ export async function getApiQuota() {
   return { used, limit: MINUTE_LIMIT, remaining: Math.max(0, MINUTE_LIMIT - used) };
 }
 
+export async function refreshDividends(userId: number) {
+  const userHoldings = await db
+    .select({
+      ticker: holdings.ticker,
+      shares: holdings.shares,
+      assetType: holdings.assetType,
+      portfolioId: holdings.portfolioId,
+      holdingId: holdings.id,
+    })
+    .from(holdings)
+    .innerJoin(portfolios, eq(portfolios.id, holdings.portfolioId))
+    .where(eq(portfolios.userId, userId));
+
+  const now = new Date();
+  const from = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000)
+    .toISOString()
+    .split("T")[0];
+  const to = now.toISOString().split("T")[0];
+
+  const seen = new Set<string>();
+  for (const h of userHoldings) {
+    if (h.assetType === "crypto" || seen.has(h.ticker)) continue;
+    seen.add(h.ticker);
+
+    let apiDividends;
+    try {
+      apiDividends = await fetchDividends(h.ticker, from, to);
+    } catch (e) {
+      console.error(`[dividends] Failed to fetch ${h.ticker}:`, e);
+      continue;
+    }
+
+    const holdingsForTicker = userHoldings.filter(
+      (uh) => uh.ticker === h.ticker,
+    );
+
+    for (const div of apiDividends) {
+      for (const holding of holdingsForTicker) {
+        const amount = div.amount * holding.shares;
+        await db
+          .insert(dividends)
+          .values({
+            portfolioId: holding.portfolioId,
+            holdingId: holding.holdingId,
+            ticker: holding.ticker,
+            amount,
+            dividendPerShare: div.amount,
+            shares: holding.shares,
+            exDate: div.date,
+            payDate: div.payDate || null,
+            source: "api",
+          })
+          .onConflictDoNothing();
+      }
+    }
+  }
+}
+
 export async function refreshAllUsers() {
   const allUsers = await db.select({ id: users.id }).from(users);
   for (const { id } of allUsers) {
     try {
       await refreshPricesAndSnapshot(id);
+      await refreshDividends(id);
     } catch (e) {
       console.error(`[snapshot-cron] Failed for user ${id}:`, e);
     }

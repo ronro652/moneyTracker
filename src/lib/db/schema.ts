@@ -12,6 +12,7 @@ import {
 
 export const assetTypeEnum = pgEnum("asset_type", ["stock", "crypto"]);
 export const txnTypeEnum = pgEnum("txn_type", ["buy", "sell"]);
+export const dividendSourceEnum = pgEnum("dividend_source", ["manual", "api"]);
 
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
@@ -119,3 +120,26 @@ export const exchangeRates = pgTable("exchange_rates", {
   rate: doublePrecision("rate").notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
 });
+
+export const dividends = pgTable(
+  "dividends",
+  {
+    id: serial("id").primaryKey(),
+    portfolioId: integer("portfolio_id")
+      .notNull()
+      .references(() => portfolios.id, { onDelete: "cascade" }),
+    holdingId: integer("holding_id").references(() => holdings.id, { onDelete: "set null" }),
+    ticker: text("ticker").notNull(),
+    amount: doublePrecision("amount").notNull(),
+    dividendPerShare: doublePrecision("dividend_per_share").notNull(),
+    shares: doublePrecision("shares").notNull(),
+    exDate: text("ex_date").notNull(),
+    payDate: text("pay_date"),
+    source: dividendSourceEnum("source").notNull().default("manual"),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => ({
+    portfolioIdx: index("idx_dividends_portfolio").on(t.portfolioId),
+    tickerExDateIdx: uniqueIndex("idx_dividends_ticker_exdate_portfolio").on(t.ticker, t.exDate, t.portfolioId),
+  }),
+);

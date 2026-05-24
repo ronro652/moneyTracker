@@ -40,3 +40,12 @@ export const createTransactionSchema = z.object({
   asset_type: z.enum(["stock", "crypto"]).optional().default("stock"),
   type: z.enum(["buy", "sell"]),
 });
+
+export const createDividendSchema = z.object({
+  ticker: z.string().min(1),
+  dividend_per_share: z.number().positive("Dividend per share must be positive"),
+  shares: z.number().positive("Shares must be positive"),
+  portfolio_id: z.number().int().positive(),
+  ex_date: z.string().min(1, "Ex-dividend date is required"),
+  pay_date: z.string().optional().default(""),
+});

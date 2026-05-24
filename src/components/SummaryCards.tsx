@@ -1,14 +1,15 @@
 "use client";
 
-import { Holding, Transaction } from "@/types";
+import { Holding, Transaction, Dividend } from "@/types";
 
 interface Props {
   holdings: Holding[];
   transactions?: Transaction[];
+  dividends?: Dividend[];
   ilsRate?: number | null;
 }
 
-export default function SummaryCards({ holdings, transactions = [], ilsRate }: Props) {
+export default function SummaryCards({ holdings, transactions = [], dividends = [], ilsRate }: Props) {
   const totalValue = holdings.reduce(
     (sum, h) => sum + (h.current_price || 0) * h.shares,
     0
@@ -102,6 +103,14 @@ export default function SummaryCards({ holdings, transactions = [], ilsRate }: P
       value: fmtUsd(totalCost),
       sub: ilsRate ? fmtIls(totalCost * ilsRate) : "Cost basis",
       color: "text-gray-900",
+    },
+    {
+      label: "Dividend Income",
+      value: fmtUsd(dividends.reduce((sum, d) => sum + d.amount, 0)),
+      sub: totalValue > 0
+        ? `Yield: ${((dividends.reduce((sum, d) => sum + d.amount, 0) / totalValue) * 100).toFixed(2)}% | ${dividends.length} payment${dividends.length !== 1 ? "s" : ""}`
+        : `${dividends.length} payment${dividends.length !== 1 ? "s" : ""}`,
+      color: dividends.reduce((sum, d) => sum + d.amount, 0) > 0 ? "text-emerald-600" : "text-gray-900",
     },
     {
       label: "Best / Worst",
