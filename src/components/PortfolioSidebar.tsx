@@ -68,12 +68,15 @@ export default function PortfolioSidebar({
   };
 
   return (
-    <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
+    <div className="bg-white rounded-2xl p-4 shadow-md shadow-black/5">
       <div className="flex items-center justify-between mb-3">
-        <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wider">Portfolios</h2>
+        <div className="flex items-center gap-2">
+          <svg className="w-4 h-4 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/></svg>
+          <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wider">Portfolios</h2>
+        </div>
         <button
           onClick={() => setShowCreate(!showCreate)}
-          className="text-gray-400 hover:text-blue-600 transition-colors p-1"
+          className="text-gray-400 hover:text-indigo-600 transition-colors p-1"
           title="Add portfolio"
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -89,13 +92,13 @@ export default function PortfolioSidebar({
             value={newName}
             onChange={(e) => setNewName(e.target.value)}
             placeholder="Portfolio name"
-            className="flex-1 bg-white border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-blue-500"
+            className="flex-1 bg-white border border-gray-300 rounded-xl px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-indigo-500"
             autoFocus
           />
           <button
             type="submit"
             disabled={creating || !newName.trim()}
-            className="bg-blue-600 hover:bg-blue-500 disabled:bg-gray-300 text-white text-sm px-3 py-2 rounded-lg transition-colors"
+            className="bg-indigo-600 hover:bg-indigo-500 disabled:bg-gray-300 text-white text-sm px-3 py-2 rounded-xl transition-colors"
           >
             Add
           </button>
@@ -107,8 +110,8 @@ export default function PortfolioSidebar({
           onClick={() => onSelect(null)}
           className={`w-full text-left px-3 py-2.5 rounded-lg text-sm transition-colors flex items-center gap-2 ${
             activePortfolioId === null
-              ? "bg-blue-50 text-blue-700 font-medium"
-              : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+              ? "bg-indigo-50 text-indigo-700 font-medium"
+              : "text-gray-600 hover:bg-gray-50/80 hover:text-gray-900"
           }`}
         >
           <span className="w-3 h-3 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex-shrink-0" />
@@ -118,12 +121,12 @@ export default function PortfolioSidebar({
         {portfolios.map((p) => (
           <div key={p.id}>
             {editingId === p.id ? (
-              <form onSubmit={handleUpdate} className="p-2 bg-gray-50 rounded-lg space-y-2">
+              <form onSubmit={handleUpdate} className="p-2 bg-gray-50/80 rounded-xl space-y-2">
                 <input
                   type="text"
                   value={editName}
                   onChange={(e) => setEditName(e.target.value)}
-                  className="w-full bg-white border border-gray-300 rounded px-2 py-1.5 text-sm text-gray-900 focus:outline-none focus:border-blue-500"
+                  className="w-full bg-white border border-gray-300 rounded px-2 py-1.5 text-sm text-gray-900 focus:outline-none focus:border-indigo-500"
                   autoFocus
                 />
                 <div className="flex gap-1.5 flex-wrap">
@@ -133,14 +136,14 @@ export default function PortfolioSidebar({
                       type="button"
                       onClick={() => setEditColor(c)}
                       className={`w-6 h-6 rounded-full transition-transform ${
-                        editColor === c ? "scale-125 ring-2 ring-white" : "hover:scale-110"
+                        editColor === c ? "scale-125 ring-2 ring-indigo-200" : "hover:scale-110"
                       }`}
                       style={{ backgroundColor: c }}
                     />
                   ))}
                 </div>
                 <div className="flex gap-2">
-                  <button type="submit" className="text-xs text-blue-600 hover:text-blue-500">Save</button>
+                  <button type="submit" className="text-xs text-indigo-600 hover:text-indigo-500">Save</button>
                   <button type="button" onClick={() => setEditingId(null)} className="text-xs text-gray-500 hover:text-gray-700">Cancel</button>
                 </div>
               </form>
@@ -150,8 +153,8 @@ export default function PortfolioSidebar({
                   onClick={() => onSelect(p.id)}
                   className={`flex-1 text-left px-3 py-2.5 rounded-lg text-sm transition-colors flex items-center gap-2 ${
                     activePortfolioId === p.id
-                      ? "bg-blue-50 text-blue-700 font-medium"
-                      : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                      ? "bg-indigo-50 text-indigo-700 font-medium"
+                      : "text-gray-600 hover:bg-gray-50/80 hover:text-gray-900"
                   }`}
                 >
                   <span className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: p.color }} />

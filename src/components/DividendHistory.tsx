@@ -28,8 +28,11 @@ export default function DividendHistory({ dividends }: Props) {
 
   if (dividends.length === 0) {
     return (
-      <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Dividend History</h2>
+      <div className="bg-white rounded-2xl p-6 shadow-md shadow-black/5">
+        <div className="flex items-center gap-2">
+          <svg className="w-5 h-5 text-teal-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">Dividend History</h2>
+        </div>
         <p className="text-gray-400 text-center py-8">
           No dividends recorded yet. Dividends are auto-detected daily or can be added manually.
         </p>
@@ -42,9 +45,12 @@ export default function DividendHistory({ dividends }: Props) {
   const paginated = dividends.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
 
   return (
-    <div className="bg-white border border-gray-200 rounded-xl p-4 sm:p-6 shadow-sm">
+    <div className="bg-white rounded-2xl p-4 sm:p-6 shadow-md shadow-black/5">
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-lg font-semibold text-gray-900">Dividend History</h2>
+        <div className="flex items-center gap-2">
+          <svg className="w-5 h-5 text-teal-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+          <h2 className="text-lg font-semibold text-gray-900">Dividend History</h2>
+        </div>
         <span className="text-sm font-medium text-emerald-600">
           Total: {fmt(totalIncome)}
         </span>
@@ -55,15 +61,15 @@ export default function DividendHistory({ dividends }: Props) {
         {paginated.map((d) => (
           <div
             key={d.id}
-            className="border rounded-lg p-4 bg-blue-50/50 border-blue-200"
+            className="border rounded-2xl p-4 bg-teal-50/50 border-teal-200/60"
           >
             <div className="flex items-start justify-between mb-2">
               <div className="flex items-center gap-2">
-                <span className="text-xs font-bold px-2 py-0.5 rounded bg-blue-100 text-blue-700">
+                <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-teal-100 text-teal-700">
                   DIV
                 </span>
                 <span className="font-bold text-gray-900">{d.ticker}</span>
-                <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded ${
+                <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full ${
                   d.source === "api"
                     ? "bg-purple-100 text-purple-700"
                     : "bg-gray-100 text-gray-600"
@@ -113,7 +119,7 @@ export default function DividendHistory({ dividends }: Props) {
           </thead>
           <tbody>
             {paginated.map((d) => (
-              <tr key={d.id} className="border-b border-gray-100 hover:bg-blue-50/50">
+              <tr key={d.id} className="border-b border-gray-100 hover:bg-indigo-50/50">
                 <td className="py-3 px-2 text-gray-500 whitespace-nowrap">
                   {fmtDate(d.ex_date)}
                 </td>
@@ -122,7 +128,7 @@ export default function DividendHistory({ dividends }: Props) {
                 <td className="py-3 px-2 text-right text-gray-600">{d.shares}</td>
                 <td className="py-3 px-2 text-right text-emerald-600 font-medium">{fmt(d.amount)}</td>
                 <td className="py-3 px-2">
-                  <span className={`text-xs font-medium px-2 py-0.5 rounded ${
+                  <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${
                     d.source === "api"
                       ? "bg-purple-100 text-purple-700"
                       : "bg-gray-100 text-gray-600"
@@ -145,14 +151,14 @@ export default function DividendHistory({ dividends }: Props) {
             <button
               onClick={() => setPage(page - 1)}
               disabled={page === 0}
-              className="text-xs px-3 py-1.5 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed transition"
+              className="text-xs px-3 py-1.5 rounded-xl border border-gray-200 text-gray-600 hover:bg-indigo-50 hover:text-indigo-600 hover:border-indigo-200 disabled:opacity-30 disabled:cursor-not-allowed transition"
             >
               Prev
             </button>
             <button
               onClick={() => setPage(page + 1)}
               disabled={page >= totalPages - 1}
-              className="text-xs px-3 py-1.5 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed transition"
+              className="text-xs px-3 py-1.5 rounded-xl border border-gray-200 text-gray-600 hover:bg-indigo-50 hover:text-indigo-600 hover:border-indigo-200 disabled:opacity-30 disabled:cursor-not-allowed transition"
             >
               Next
             </button>

@@ -73,7 +73,19 @@ export interface PriceData {
   changePercent: number;
 }
 
-export type WidgetType = "summary" | "chart" | "profit-chart" | "holdings" | "add-stock" | "allocation" | "transactions" | "dividends";
+export interface ExpectedDividend {
+  ticker: string;
+  name: string;
+  current_shares: number;
+  last_dividend_per_share: number;
+  estimated_amount: number;
+  frequency: "monthly" | "quarterly" | "semi-annual" | "annual" | "irregular";
+  next_expected_date: string;
+  annual_estimate: number;
+  days_until: number;
+}
+
+export type WidgetType = "summary" | "chart" | "profit-chart" | "holdings" | "add-stock" | "allocation" | "transactions" | "dividends" | "expected-dividends";
 
 export interface DashboardWidget {
   id: string;
@@ -96,6 +108,7 @@ export const DEFAULT_WIDGETS: DashboardWidget[] = [
   { id: "holdings", type: "holdings", label: "Holdings Table", visible: true, order: 5 },
   { id: "transactions", type: "transactions", label: "Transaction History", visible: true, order: 6 },
   { id: "dividends", type: "dividends", label: "Dividend History", visible: true, order: 7 },
+  { id: "expected-dividends", type: "expected-dividends", label: "Expected Dividends", visible: true, order: 8 },
 ];
 
 export const PORTFOLIO_COLORS = [

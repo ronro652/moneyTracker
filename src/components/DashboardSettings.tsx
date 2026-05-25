@@ -50,10 +50,13 @@ export default function DashboardSettings({ widgets, onChange, open, onClose }: 
 
   return (
     <>
-      <div className="fixed inset-0 z-40 bg-black/20" onClick={onClose} />
-      <div className="fixed right-4 top-20 z-50 w-80 bg-white border border-gray-200 rounded-xl shadow-xl">
-        <div className="flex items-center justify-between p-4 border-b border-gray-200">
-          <h3 className="text-sm font-semibold text-gray-900">Dashboard Layout</h3>
+      <div className="fixed inset-0 z-40 bg-black/30" onClick={onClose} />
+      <div className="fixed right-4 top-20 z-50 w-80 bg-white rounded-2xl shadow-2xl animate-[scaleIn_0.2s_ease-out]">
+        <div className="flex items-center justify-between p-4 border-b border-gray-100">
+          <div className="flex items-center gap-2">
+            <svg className="w-4 h-4 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+            <h3 className="text-sm font-semibold text-gray-900">Dashboard Layout</h3>
+          </div>
           <button onClick={onClose} className="p-1 text-gray-400 hover:text-gray-700 transition-colors">
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -64,14 +67,14 @@ export default function DashboardSettings({ widgets, onChange, open, onClose }: 
           {sorted.map((widget, idx) => (
             <div
               key={widget.id}
-              className="flex items-center gap-2 px-3 py-2.5 rounded-lg bg-gray-50 border border-gray-200"
+              className="flex items-center gap-2 px-3 py-2.5 rounded-lg bg-white border border-gray-100 shadow-sm"
             >
               <button
                 onClick={() => toggleVisibility(widget.id)}
                 className={`flex-shrink-0 w-5 h-5 rounded border transition-colors ${
                   widget.visible
-                    ? "bg-blue-600 border-blue-500"
-                    : "border-gray-300 hover:border-gray-400"
+                    ? "bg-indigo-600 border-indigo-500"
+                    : "border-gray-300 hover:border-indigo-400"
                 }`}
               >
                 {widget.visible && (

@@ -146,11 +146,11 @@ export default function AddStockForm({ onAdded, portfolioId, open, onClose }: Pr
       }
     >
       <div className={isBottomSheet ? "flex gap-2" : "w-full mb-1 flex gap-2 flex-wrap"}>
-        <div className="inline-flex rounded-lg border border-gray-300 p-0.5 bg-gray-100">
+        <div className="inline-flex rounded-xl border border-gray-200 p-0.5 bg-gray-100">
           <button
             type="button"
             onClick={() => switchAssetType("stock")}
-            className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
+            className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${
               !isCrypto
                 ? "bg-white text-gray-900 shadow-sm"
                 : "text-gray-500 hover:text-gray-700"
@@ -161,7 +161,7 @@ export default function AddStockForm({ onAdded, portfolioId, open, onClose }: Pr
           <button
             type="button"
             onClick={() => switchAssetType("crypto")}
-            className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
+            className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${
               isCrypto
                 ? "bg-white text-gray-900 shadow-sm"
                 : "text-gray-500 hover:text-gray-700"
@@ -171,11 +171,11 @@ export default function AddStockForm({ onAdded, portfolioId, open, onClose }: Pr
           </button>
         </div>
 
-        <div className="inline-flex rounded-lg border border-gray-300 p-0.5 bg-gray-100">
+        <div className="inline-flex rounded-xl border border-gray-200 p-0.5 bg-gray-100">
           <button
             type="button"
             onClick={() => { setTransactionType("buy"); setError(""); }}
-            className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
+            className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${
               !isSell
                 ? "bg-emerald-500 text-white shadow-sm"
                 : "text-gray-500 hover:text-gray-700"
@@ -186,9 +186,9 @@ export default function AddStockForm({ onAdded, portfolioId, open, onClose }: Pr
           <button
             type="button"
             onClick={() => { setTransactionType("sell"); setError(""); }}
-            className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
+            className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${
               isSell
-                ? "bg-red-500 text-white shadow-sm"
+                ? "bg-rose-500 text-white shadow-sm"
                 : "text-gray-500 hover:text-gray-700"
             }`}
           >
@@ -198,7 +198,7 @@ export default function AddStockForm({ onAdded, portfolioId, open, onClose }: Pr
       </div>
 
       {error && (
-        <p className="text-red-500 text-sm bg-red-50 border border-red-200 rounded-lg px-3 py-2">{error}</p>
+        <p className="text-rose-500 text-sm bg-rose-50 border border-rose-200 rounded-xl px-3 py-2">{error}</p>
       )}
 
       <div className={isBottomSheet ? "" : "relative flex-1 min-w-[140px]"}>
@@ -212,18 +212,18 @@ export default function AddStockForm({ onAdded, portfolioId, open, onClose }: Pr
             onChange={(e) => handleSearch(e.target.value.toUpperCase())}
             onBlur={() => setTimeout(() => setShowSearch(false), 200)}
             placeholder={isCrypto ? "BTC" : "AAPL"}
-            className="w-full bg-white border border-gray-300 rounded-lg px-3 py-3 text-gray-900 placeholder-gray-400 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+            className="w-full bg-white border border-gray-200 rounded-xl px-3 py-3 text-gray-900 placeholder-gray-400 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
             required
             autoFocus={isBottomSheet}
           />
           {showSearch && (
-            <div className="absolute z-10 top-full mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg max-h-48 overflow-auto">
+            <div className="absolute z-10 top-full mt-1 w-full bg-white border border-gray-100 rounded-xl shadow-xl max-h-48 overflow-auto">
               {searchResults.map((r) => (
                 <button
                   key={r.ticker}
                   type="button"
                   onClick={() => selectResult(r)}
-                  className="w-full text-left px-3 py-3 hover:bg-blue-50 text-sm"
+                  className="w-full text-left px-3 py-3 hover:bg-indigo-50 text-sm"
                 >
                   <span className="font-bold text-gray-900">{r.ticker}</span>{" "}
                   <span className="text-gray-500 truncate">{r.name}</span>
@@ -253,7 +253,7 @@ export default function AddStockForm({ onAdded, portfolioId, open, onClose }: Pr
             value={shares}
             onChange={(e) => setShares(e.target.value)}
             placeholder={isCrypto ? "0.5" : "10"}
-            className="w-full bg-white border border-gray-300 rounded-lg px-3 py-3 text-gray-900 placeholder-gray-400 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+            className="w-full bg-white border border-gray-200 rounded-xl px-3 py-3 text-gray-900 placeholder-gray-400 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
             required
           />
         </div>
@@ -268,7 +268,7 @@ export default function AddStockForm({ onAdded, portfolioId, open, onClose }: Pr
             value={price}
             onChange={(e) => setPrice(e.target.value)}
             placeholder={isCrypto ? "65000.00" : "150.00"}
-            className="w-full bg-white border border-gray-300 rounded-lg px-3 py-3 text-gray-900 placeholder-gray-400 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+            className="w-full bg-white border border-gray-200 rounded-xl px-3 py-3 text-gray-900 placeholder-gray-400 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
             required
           />
         </div>
@@ -279,9 +279,9 @@ export default function AddStockForm({ onAdded, portfolioId, open, onClose }: Pr
         disabled={loading}
         className={`${
           isSell
-            ? "bg-red-500 hover:bg-red-400 active:bg-red-600"
+            ? "bg-rose-500 hover:bg-rose-400 active:bg-rose-600"
             : "bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700"
-        } disabled:bg-gray-300 text-white font-medium rounded-lg transition-colors ${
+        } disabled:bg-gray-300 text-white font-medium rounded-xl transition-colors ${
           isBottomSheet ? "w-full py-3.5 text-base mt-1" : "px-5 py-3 text-sm"
         }`}
       >
@@ -298,19 +298,19 @@ export default function AddStockForm({ onAdded, portfolioId, open, onClose }: Pr
     return (
       <>
         <div
-          className={`fixed inset-0 z-40 bg-black/20 transition-opacity duration-300 ${
+          className={`fixed inset-0 z-40 bg-black/30 transition-opacity duration-300 ${
             open ? "opacity-100" : "opacity-0 pointer-events-none"
           }`}
           onClick={onClose}
         />
         <div
-          className={`fixed inset-x-0 bottom-0 z-50 bg-white border-t border-gray-200 rounded-t-2xl shadow-xl transition-transform duration-300 ease-out ${
+          className={`fixed inset-x-0 bottom-0 z-50 bg-white rounded-t-3xl shadow-2xl transition-transform duration-300 ease-out ${
             open ? "translate-y-0" : "translate-y-full"
           }`}
           style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
         >
           <div className="flex justify-center pt-3 pb-2">
-            <div className="w-10 h-1 rounded-full bg-gray-300" />
+            <div className="w-10 h-1 rounded-full bg-gray-200" />
           </div>
           <div className="px-5 pb-6">
             <div className="flex items-center justify-between mb-4">
@@ -344,10 +344,13 @@ export default function AddStockForm({ onAdded, portfolioId, open, onClose }: Pr
   }
 
   return (
-    <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
-      <h2 className="text-lg font-semibold text-gray-900 mb-4">
-        {isSell ? "Sell Holding" : "Buy Holding"}
-      </h2>
+    <div className="bg-white rounded-2xl p-6 shadow-md shadow-black/5">
+      <div className="flex items-center gap-2">
+        <svg className="w-5 h-5 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        <h2 className="text-lg font-semibold text-gray-900 mb-4">
+          {isSell ? "Sell Holding" : "Buy Holding"}
+        </h2>
+      </div>
       {formContent}
     </div>
   );

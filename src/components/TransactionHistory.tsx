@@ -36,8 +36,11 @@ export default function TransactionHistory({ transactions }: Props) {
 
   if (transactions.length === 0) {
     return (
-      <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Transaction History</h2>
+      <div className="bg-white rounded-2xl p-6 shadow-md shadow-black/5">
+        <div className="flex items-center gap-2">
+          <svg className="w-5 h-5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">Transaction History</h2>
+        </div>
         <p className="text-gray-400 text-center py-8">
           No transactions yet. Buy or sell to see your history here.
         </p>
@@ -53,11 +56,14 @@ export default function TransactionHistory({ transactions }: Props) {
   const paginated = transactions.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
 
   return (
-    <div className="bg-white border border-gray-200 rounded-xl p-4 sm:p-6 shadow-sm">
+    <div className="bg-white rounded-2xl p-4 sm:p-6 shadow-md shadow-black/5">
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-lg font-semibold text-gray-900">Transaction History</h2>
+        <div className="flex items-center gap-2">
+          <svg className="w-5 h-5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+          <h2 className="text-lg font-semibold text-gray-900">Transaction History</h2>
+        </div>
         {totalRealized !== 0 && (
-          <span className={`text-sm font-medium ${totalRealized >= 0 ? "text-emerald-600" : "text-red-500"}`}>
+          <span className={`text-sm font-medium ${totalRealized >= 0 ? "text-emerald-600" : "text-rose-500"}`}>
             Realized: {fmt(totalRealized)}
           </span>
         )}
@@ -68,26 +74,26 @@ export default function TransactionHistory({ transactions }: Props) {
         {paginated.map((t) => (
           <div
             key={t.id}
-            className={`border rounded-lg p-4 ${
+            className={`p-4 ${
               t.type === "buy"
-                ? "bg-emerald-50/50 border-emerald-200"
-                : "bg-red-50/50 border-red-200"
+                ? "bg-emerald-50/60 border border-emerald-200/60 rounded-2xl"
+                : "bg-rose-50/60 border border-rose-200/60 rounded-2xl"
             }`}
           >
             <div className="flex items-start justify-between mb-2">
               <div className="flex items-center gap-2">
                 <span
-                  className={`text-xs font-bold px-2 py-0.5 rounded ${
+                  className={`text-xs font-bold px-2 py-0.5 rounded-full ${
                     t.type === "buy"
                       ? "bg-emerald-100 text-emerald-700"
-                      : "bg-red-100 text-red-700"
+                      : "bg-rose-100 text-rose-700"
                   }`}
                 >
                   {t.type.toUpperCase()}
                 </span>
                 <span className="font-bold text-gray-900">{t.ticker}</span>
                 {t.asset_type === "crypto" && (
-                  <span className="text-[10px] font-medium bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded">
+                  <span className="text-[10px] font-medium bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded-full">
                     CRYPTO
                   </span>
                 )}
@@ -111,7 +117,7 @@ export default function TransactionHistory({ transactions }: Props) {
               {t.type === "sell" && t.realized_gain !== null && (
                 <div>
                   <span className="text-gray-400 text-xs">P/L</span>
-                  <p className={`font-medium ${t.realized_gain >= 0 ? "text-emerald-600" : "text-red-500"}`}>
+                  <p className={`font-medium ${t.realized_gain >= 0 ? "text-emerald-600" : "text-rose-500"}`}>
                     {fmt(t.realized_gain)}
                   </p>
                 </div>
@@ -138,17 +144,17 @@ export default function TransactionHistory({ transactions }: Props) {
           </thead>
           <tbody>
             {paginated.map((t) => (
-              <tr key={t.id} className="border-b border-gray-100 hover:bg-blue-50/50">
+              <tr key={t.id} className="border-b border-gray-100 hover:bg-indigo-50/50">
                 <td className="py-3 px-2 text-gray-500 whitespace-nowrap">
                   <span>{fmtDate(t.created_at)}</span>
                   <span className="text-gray-400 text-xs ml-1">{fmtTime(t.created_at)}</span>
                 </td>
                 <td className="py-3 px-2">
                   <span
-                    className={`text-xs font-bold px-2 py-0.5 rounded ${
+                    className={`text-xs font-bold px-2 py-0.5 rounded-full ${
                       t.type === "buy"
                         ? "bg-emerald-100 text-emerald-700"
-                        : "bg-red-100 text-red-700"
+                        : "bg-rose-100 text-rose-700"
                     }`}
                   >
                     {t.type.toUpperCase()}
@@ -158,7 +164,7 @@ export default function TransactionHistory({ transactions }: Props) {
                   <span className="inline-flex items-center gap-1.5">
                     {t.ticker}
                     {t.asset_type === "crypto" && (
-                      <span className="text-[10px] font-medium bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded">
+                      <span className="text-[10px] font-medium bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded-full">
                         CRYPTO
                       </span>
                     )}
@@ -172,7 +178,7 @@ export default function TransactionHistory({ transactions }: Props) {
                   t.type === "sell" && t.realized_gain !== null
                     ? t.realized_gain >= 0
                       ? "text-emerald-600"
-                      : "text-red-500"
+                      : "text-rose-500"
                     : "text-gray-400"
                 }`}>
                   {t.type === "sell" && t.realized_gain !== null
@@ -194,14 +200,14 @@ export default function TransactionHistory({ transactions }: Props) {
             <button
               onClick={() => setPage(page - 1)}
               disabled={page === 0}
-              className="text-xs px-3 py-1.5 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed transition"
+              className="text-xs px-3 py-1.5 rounded-xl border border-gray-200 text-gray-600 hover:bg-indigo-50 hover:text-indigo-600 hover:border-indigo-200 disabled:opacity-30 disabled:cursor-not-allowed transition"
             >
               Prev
             </button>
             <button
               onClick={() => setPage(page + 1)}
               disabled={page >= totalPages - 1}
-              className="text-xs px-3 py-1.5 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed transition"
+              className="text-xs px-3 py-1.5 rounded-xl border border-gray-200 text-gray-600 hover:bg-indigo-50 hover:text-indigo-600 hover:border-indigo-200 disabled:opacity-30 disabled:cursor-not-allowed transition"
             >
               Next
             </button>

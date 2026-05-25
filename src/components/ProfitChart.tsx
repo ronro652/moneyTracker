@@ -49,9 +49,13 @@ export default function ProfitChart({ snapshots }: Props) {
 
   if (snapshots.length === 0) {
     return (
-      <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Profit / Loss</h2>
-        <div className="flex items-center justify-center h-40 sm:h-64 text-gray-400 text-sm text-center px-4">
+      <div className="bg-white rounded-2xl p-4 sm:p-6 shadow-md shadow-black/5">
+        <div className="flex items-center gap-2 mb-4">
+          <svg className="w-5 h-5 text-violet-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+          <h2 className="text-lg font-semibold text-gray-900">Profit / Loss</h2>
+        </div>
+        <div className="flex flex-col items-center justify-center h-40 sm:h-64 text-gray-400 text-sm text-center px-4">
+          <svg className="w-10 h-10 text-gray-300 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
           Add stocks and refresh prices to see your profit chart
         </div>
       </div>
@@ -78,24 +82,27 @@ export default function ProfitChart({ snapshots }: Props) {
   const fmtPct = (n: number) => `${n >= 0 ? "+" : ""}${n.toFixed(1)}%`;
 
   return (
-    <div className="bg-white border border-gray-200 rounded-xl p-4 sm:p-6 shadow-sm">
+    <div className="bg-white rounded-2xl p-4 sm:p-6 shadow-md shadow-black/5">
       <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
         <div>
-          <h2 className="text-lg font-semibold text-gray-900">Profit / Loss</h2>
+          <div className="flex items-center gap-2">
+            <svg className="w-5 h-5 text-violet-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+            <h2 className="text-lg font-semibold text-gray-900">Profit / Loss</h2>
+          </div>
           {lastPoint && (
             <p className={`text-sm font-medium ${isPositive ? "text-emerald-600" : "text-red-500"}`}>
               {fmtDollar(lastPoint.profit)} ({fmtPct(lastPoint.profitPct)})
             </p>
           )}
         </div>
-        <div className="flex gap-1 bg-gray-100 rounded-lg p-0.5">
+        <div className="flex gap-1 bg-gray-100 rounded-xl p-0.5">
           {RANGES.map((r) => (
             <button
               key={r}
               onClick={() => setRange(r)}
               className={`px-2.5 py-1 text-xs font-medium rounded-md transition-colors ${
                 range === r
-                  ? "bg-white text-blue-600 shadow-sm"
+                  ? "bg-indigo-600 text-white shadow-sm"
                   : "text-gray-500 hover:text-gray-700"
               }`}
             >

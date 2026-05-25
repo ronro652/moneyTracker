@@ -26,10 +26,15 @@ export default function AuthPage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 flex items-center justify-center px-4">
-      <div className="w-full max-w-sm">
+    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-[#f7f6f3] to-amber-50/50 flex items-center justify-center px-4 relative overflow-hidden">
+      {/* Decorative floating blobs */}
+      <div className="absolute top-[-120px] left-[-80px] w-72 h-72 bg-indigo-300/30 rounded-full blur-3xl" />
+      <div className="absolute bottom-[-100px] right-[-60px] w-80 h-80 bg-violet-300/20 rounded-full blur-3xl" />
+      <div className="absolute top-1/2 left-1/3 w-48 h-48 bg-amber-200/20 rounded-full blur-2xl" />
+
+      <div className="w-full max-w-sm relative z-10">
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-blue-600 text-white mb-4">
+          <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-br from-indigo-500 to-violet-600 text-white mb-4">
             <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
@@ -40,9 +45,9 @@ export default function AuthPage() {
           </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="bg-white rounded-xl border border-gray-200 shadow-sm p-6 space-y-4">
+        <form onSubmit={handleSubmit} className="bg-white rounded-2xl shadow-xl shadow-indigo-500/5 border-0 p-6 space-y-4 animate-[slideUp_0.5s_ease-out]">
           {error && (
-            <div className="bg-red-50 text-red-600 text-sm px-3 py-2 rounded-lg border border-red-100">
+            <div className="bg-red-50 text-red-600 text-sm px-3 py-2 rounded-xl border border-red-100">
               {error}
             </div>
           )}
@@ -55,7 +60,7 @@ export default function AuthPage() {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 required
-                className="w-full px-3 py-2 rounded-lg border border-gray-300 bg-white text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-3 py-2 rounded-xl border border-gray-200 bg-white text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                 placeholder="Your name"
               />
             </div>
@@ -68,7 +73,7 @@ export default function AuthPage() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              className="w-full px-3 py-2 rounded-lg border border-gray-300 bg-white text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-3 py-2 rounded-xl border border-gray-200 bg-white text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
               placeholder="you@example.com"
             />
           </div>
@@ -81,7 +86,7 @@ export default function AuthPage() {
               onChange={(e) => setPassword(e.target.value)}
               required
               minLength={6}
-              className="w-full px-3 py-2 rounded-lg border border-gray-300 bg-white text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-3 py-2 rounded-xl border border-gray-200 bg-white text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
               placeholder={mode === "register" ? "At least 6 characters" : "Your password"}
             />
           </div>
@@ -89,7 +94,7 @@ export default function AuthPage() {
           <button
             type="submit"
             disabled={submitting}
-            className="w-full bg-blue-600 hover:bg-blue-500 active:bg-blue-700 disabled:bg-gray-300 text-white font-medium py-2.5 rounded-lg transition-colors"
+            className="w-full bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 active:from-indigo-700 active:to-violet-700 disabled:bg-gray-300 disabled:from-gray-300 disabled:to-gray-300 text-white font-medium py-2.5 rounded-xl transition-all"
           >
             {submitting
               ? (mode === "login" ? "Signing in..." : "Creating account...")
@@ -101,14 +106,14 @@ export default function AuthPage() {
           {mode === "login" ? (
             <>
               Don&apos;t have an account?{" "}
-              <button onClick={() => { setMode("register"); setError(null); }} className="text-blue-600 hover:text-blue-500 font-medium">
+              <button onClick={() => { setMode("register"); setError(null); }} className="text-indigo-600 hover:text-indigo-500 font-medium">
                 Sign up
               </button>
             </>
           ) : (
             <>
               Already have an account?{" "}
-              <button onClick={() => { setMode("login"); setError(null); }} className="text-blue-600 hover:text-blue-500 font-medium">
+              <button onClick={() => { setMode("login"); setError(null); }} className="text-indigo-600 hover:text-indigo-500 font-medium">
                 Sign in
               </button>
             </>
