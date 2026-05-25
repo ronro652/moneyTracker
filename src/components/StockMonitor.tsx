@@ -118,7 +118,10 @@ export default function StockMonitor({ holdings, portfolios, refreshing, lastUpd
 
   if (holdings.length === 0) {
     return (
-      <div className="flex items-center justify-center py-20">
+      <div className="flex flex-col items-center justify-center py-20 gap-3">
+        <svg className="w-12 h-12 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+        </svg>
         <p className="text-gray-400 text-lg">No holdings yet</p>
       </div>
     );
@@ -127,16 +130,16 @@ export default function StockMonitor({ holdings, portfolios, refreshing, lastUpd
   return (
     <div className="space-y-4">
       {/* Summary header */}
-      <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm">
+      <div className="bg-gradient-to-br from-indigo-600 to-violet-700 text-white rounded-2xl p-6 shadow-lg shadow-indigo-500/20">
         <div className="flex items-start justify-between">
           <div>
-            <p className="text-sm text-gray-500">Portfolio Value</p>
-            <p className="text-3xl font-bold text-gray-900 tracking-tight">{fmt(totalValue)}</p>
+            <p className="text-sm text-white/70">Portfolio Value</p>
+            <p className="text-3xl font-bold text-white tracking-tight">{fmt(totalValue)}</p>
           </div>
           <button
             onClick={onRefresh}
             disabled={refreshing}
-            className="p-2 text-gray-400 hover:text-blue-600 disabled:text-gray-300 transition-colors"
+            className="p-2 text-white/60 hover:text-white disabled:text-white/30 transition-colors"
             title="Refresh prices"
           >
             <svg className={`w-5 h-5 ${refreshing ? "animate-spin" : ""}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -146,22 +149,22 @@ export default function StockMonitor({ holdings, portfolios, refreshing, lastUpd
         </div>
         <div className="flex items-center gap-4 mt-2">
           <div>
-            <span className="text-xs text-gray-400">Today </span>
-            <span className={`text-sm font-semibold ${totalDayChange >= 0 ? "text-emerald-600" : "text-red-500"}`}>
+            <span className="text-xs text-white/70">Today </span>
+            <span className={`text-sm font-semibold ${totalDayChange >= 0 ? "text-emerald-300" : "text-rose-300"}`}>
               {totalDayChange >= 0 ? "+" : ""}{fmt(totalDayChange)}
               <span className="ml-1 opacity-75">({totalDayPct >= 0 ? "+" : ""}{totalDayPct.toFixed(2)}%)</span>
             </span>
           </div>
           <div>
-            <span className="text-xs text-gray-400">Total </span>
-            <span className={`text-sm font-semibold ${totalGain >= 0 ? "text-emerald-600" : "text-red-500"}`}>
+            <span className="text-xs text-white/70">Total </span>
+            <span className={`text-sm font-semibold ${totalGain >= 0 ? "text-emerald-300" : "text-rose-300"}`}>
               {totalGain >= 0 ? "+" : ""}{fmtCompact(totalGain)}
               <span className="ml-1 opacity-75">({totalGainPct >= 0 ? "+" : ""}{totalGainPct.toFixed(1)}%)</span>
             </span>
           </div>
         </div>
         {lastUpdated && (
-          <p className="text-[11px] text-gray-300 mt-2">Updated {lastUpdated}</p>
+          <p className="text-[11px] text-white/40 mt-2">Updated {lastUpdated}</p>
         )}
       </div>
 
@@ -178,8 +181,8 @@ export default function StockMonitor({ holdings, portfolios, refreshing, lastUpd
             onClick={() => setSortKey(key)}
             className={`text-xs px-3 py-1.5 rounded-full transition-colors ${
               sortKey === key
-                ? "bg-blue-600 text-white"
-                : "bg-gray-100 text-gray-500 hover:bg-gray-200"
+                ? "bg-indigo-600 text-white shadow-sm"
+                : "bg-white text-gray-500 border border-gray-200 hover:border-indigo-300 hover:text-indigo-600"
             }`}
           >
             {label}
@@ -189,13 +192,15 @@ export default function StockMonitor({ holdings, portfolios, refreshing, lastUpd
 
       {/* Stock list */}
       <div className="space-y-2.5">
-        {sorted.map((h) => {
+        {sorted.map((h, index) => {
           const { value, gain, gainPct } = getAggFields(h);
+          const dayBorder = h.dayChange > 0 ? "border-l-4 border-emerald-400" : h.dayChange < 0 ? "border-l-4 border-rose-400" : "border-l-4 border-gray-200";
 
           return (
             <div
               key={h.ticker}
-              className="bg-white border border-gray-200 rounded-xl px-5 py-4 shadow-sm hover:shadow-md transition-shadow"
+              className={`bg-white ${dayBorder} rounded-2xl px-5 py-4 shadow-md shadow-black/5 hover:shadow-lg transition-all`}
+              style={{ animation: 'slideUp 0.3s ease-out', animationDelay: `${index * 40}ms`, animationFillMode: 'both' }}
             >
               <div className="flex items-center justify-between">
                 {/* Left: ticker + name */}
@@ -203,7 +208,7 @@ export default function StockMonitor({ holdings, portfolios, refreshing, lastUpd
                   <div className="flex items-center gap-2">
                     <span className="font-bold text-gray-900 text-lg">{h.ticker}</span>
                     {h.asset_type === "crypto" && (
-                      <span className="text-[10px] font-medium bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded">
+                      <span className="text-[10px] font-medium bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded-full">
                         CRYPTO
                       </span>
                     )}
@@ -217,7 +222,7 @@ export default function StockMonitor({ holdings, portfolios, refreshing, lastUpd
                     {h.price > 0 ? fmt(h.price) : "—"}
                   </p>
                   {h.price > 0 && (
-                    <p className={`text-sm font-semibold ${h.dayChange >= 0 ? "text-emerald-600" : "text-red-500"}`}>
+                    <p className={`text-sm font-semibold ${h.dayChange >= 0 ? "text-emerald-600" : "text-rose-500"}`}>
                       {h.dayChange >= 0 ? "+" : ""}{h.dayChange.toFixed(2)}%
                     </p>
                   )}
@@ -237,7 +242,7 @@ export default function StockMonitor({ holdings, portfolios, refreshing, lastUpd
                   </div>
                   <div className="text-right">
                     <span className="text-gray-400 text-xs">Gain/Loss</span>
-                    <p className={`font-semibold text-sm ${gain >= 0 ? "text-emerald-600" : "text-red-500"}`}>
+                    <p className={`font-semibold text-sm ${gain >= 0 ? "text-emerald-600" : "text-rose-500"}`}>
                       {gain >= 0 ? "+" : ""}{fmtCompact(gain)}
                       <span className="text-xs opacity-75 ml-0.5">({gainPct >= 0 ? "+" : ""}{gainPct.toFixed(1)}%)</span>
                     </p>

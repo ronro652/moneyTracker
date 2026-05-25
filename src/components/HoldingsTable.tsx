@@ -75,7 +75,7 @@ export default function HoldingsTable({ holdings, portfolios = [], activePortfol
 
   const SortIcon = ({ col }: { col: SortKey }) => {
     if (sortKey !== col) return <span className="text-gray-300 ml-0.5">&#8597;</span>;
-    return <span className="text-blue-500 ml-0.5">{sortDir === "asc" ? "▲" : "▼"}</span>;
+    return <span className="text-indigo-500 ml-0.5">{sortDir === "asc" ? "▲" : "▼"}</span>;
   };
 
   const totalPages = Math.ceil(sorted.length / PAGE_SIZE);
@@ -83,18 +83,25 @@ export default function HoldingsTable({ holdings, portfolios = [], activePortfol
 
   if (holdings.length === 0) {
     return (
-      <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Holdings</h2>
-        <p className="text-gray-400 text-center py-8">
-          No holdings yet. Add your first stock or coin above.
-        </p>
+      <div className="bg-white rounded-2xl p-4 sm:p-6 shadow-md shadow-black/5">
+        <div className="flex items-center gap-2 mb-4">
+          <svg className="w-5 h-5 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
+          <h2 className="text-lg font-semibold text-gray-900">Holdings</h2>
+        </div>
+        <div className="flex flex-col items-center justify-center py-8 text-gray-400">
+          <svg className="w-10 h-10 text-gray-300 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
+          <p className="text-sm">No holdings yet. Add your first stock or coin above.</p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="bg-white border border-gray-200 rounded-xl p-4 sm:p-6 shadow-sm">
-      <h2 className="text-lg font-semibold text-gray-900 mb-4">Holdings</h2>
+    <div className="bg-white rounded-2xl p-4 sm:p-6 shadow-md shadow-black/5">
+      <div className="flex items-center gap-2 mb-4">
+        <svg className="w-5 h-5 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
+        <h2 className="text-lg font-semibold text-gray-900">Holdings</h2>
+      </div>
 
       {/* Mobile card view */}
       <div className="flex flex-col gap-3 md:hidden">
@@ -104,7 +111,7 @@ export default function HoldingsTable({ holdings, portfolios = [], activePortfol
           <select
             value={sortKey}
             onChange={(e) => { setSortKey(e.target.value as SortKey); }}
-            className="bg-gray-100 border border-gray-200 rounded-md px-2 py-1 text-gray-700"
+            className="bg-gray-100 border border-gray-200 rounded-xl px-2 py-1 text-gray-700"
           >
             <option value="ticker">Ticker</option>
             <option value="name">Name</option>
@@ -118,7 +125,7 @@ export default function HoldingsTable({ holdings, portfolios = [], activePortfol
           </select>
           <button
             onClick={() => setSortDir(sortDir === "asc" ? "desc" : "asc")}
-            className="bg-gray-100 border border-gray-200 rounded-md px-2 py-1 text-gray-700"
+            className="bg-gray-100 border border-gray-200 rounded-xl px-2 py-1 text-gray-700"
           >
             {sortDir === "asc" ? "↑ Asc" : "↓ Desc"}
           </button>
@@ -129,7 +136,7 @@ export default function HoldingsTable({ holdings, portfolios = [], activePortfol
           return (
             <div
               key={h.id}
-              className="bg-gray-50 border border-gray-200 rounded-lg p-4"
+              className="bg-white border border-gray-100 rounded-2xl p-4 shadow-sm"
             >
               <div className="flex items-start justify-between mb-3">
                 <div>
@@ -138,7 +145,7 @@ export default function HoldingsTable({ holdings, portfolios = [], activePortfol
                       {h.ticker}
                     </span>
                     {h.asset_type === "crypto" && (
-                      <span className="text-[10px] font-medium bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded">
+                      <span className="text-[10px] font-medium bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded-full">
                         CRYPTO
                       </span>
                     )}
@@ -205,7 +212,7 @@ export default function HoldingsTable({ holdings, portfolios = [], activePortfol
                     <span className="text-gray-400 text-xs">Gain/Loss</span>
                     <p
                       className={`text-sm font-medium ${
-                        gain >= 0 ? "text-emerald-600" : "text-red-500"
+                        gain >= 0 ? "text-emerald-600" : "text-rose-500"
                       }`}
                     >
                       {fmt(gain)}{" "}
@@ -219,7 +226,7 @@ export default function HoldingsTable({ holdings, portfolios = [], activePortfol
                     <span className="text-gray-400 text-xs">Change %</span>
                     <p
                       className={`text-sm font-medium ${
-                        gainPct >= 0 ? "text-emerald-600" : "text-red-500"
+                        gainPct >= 0 ? "text-emerald-600" : "text-rose-500"
                       }`}
                     >
                       {gainPct >= 0 ? "+" : ""}
@@ -230,7 +237,7 @@ export default function HoldingsTable({ holdings, portfolios = [], activePortfol
                     <span className="text-gray-400 text-xs">Today</span>
                     <p
                       className={`text-sm font-medium ${
-                        dayChange >= 0 ? "text-emerald-600" : "text-red-500"
+                        dayChange >= 0 ? "text-emerald-600" : "text-rose-500"
                       }`}
                     >
                       {dayChange >= 0 ? "+" : ""}
@@ -286,13 +293,13 @@ export default function HoldingsTable({ holdings, portfolios = [], activePortfol
               return (
                 <tr
                   key={h.id}
-                  className="border-b border-gray-100 hover:bg-blue-50/50"
+                  className="border-b border-gray-100 hover:bg-indigo-50/50"
                 >
                   <td className="py-3 px-2 font-bold text-gray-900">
                     <span className="inline-flex items-center gap-1.5">
                       {h.ticker}
                       {h.asset_type === "crypto" && (
-                        <span className="text-[10px] font-medium bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded">
+                        <span className="text-[10px] font-medium bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded-full">
                           CRYPTO
                         </span>
                       )}
@@ -323,14 +330,14 @@ export default function HoldingsTable({ holdings, portfolios = [], activePortfol
                   </td>
                   <td
                     className={`py-3 px-2 text-right font-medium ${
-                      gain >= 0 ? "text-emerald-600" : "text-red-500"
+                      gain >= 0 ? "text-emerald-600" : "text-rose-500"
                     }`}
                   >
                     {price > 0 ? fmt(gain) : "—"}
                   </td>
                   <td
                     className={`py-3 px-2 text-right font-medium ${
-                      gainPct >= 0 ? "text-emerald-600" : "text-red-500"
+                      gainPct >= 0 ? "text-emerald-600" : "text-rose-500"
                     }`}
                   >
                     {price > 0
@@ -339,7 +346,7 @@ export default function HoldingsTable({ holdings, portfolios = [], activePortfol
                   </td>
                   <td
                     className={`py-3 px-2 text-right ${
-                      dayChange >= 0 ? "text-emerald-600" : "text-red-500"
+                      dayChange >= 0 ? "text-emerald-600" : "text-rose-500"
                     }`}
                   >
                     {price > 0
@@ -383,14 +390,14 @@ export default function HoldingsTable({ holdings, portfolios = [], activePortfol
             <button
               onClick={() => setPage(page - 1)}
               disabled={page === 0}
-              className="text-xs px-3 py-1.5 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed transition"
+              className="text-xs px-3 py-1.5 rounded-xl border border-gray-200 text-gray-600 hover:bg-indigo-50 hover:text-indigo-600 hover:border-indigo-200 disabled:opacity-30 disabled:cursor-not-allowed transition"
             >
               Prev
             </button>
             <button
               onClick={() => setPage(page + 1)}
               disabled={page >= totalPages - 1}
-              className="text-xs px-3 py-1.5 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed transition"
+              className="text-xs px-3 py-1.5 rounded-xl border border-gray-200 text-gray-600 hover:bg-indigo-50 hover:text-indigo-600 hover:border-indigo-200 disabled:opacity-30 disabled:cursor-not-allowed transition"
             >
               Next
             </button>

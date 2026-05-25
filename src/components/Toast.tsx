@@ -51,15 +51,24 @@ function ToastItem({ toast: t, onDismiss }: { toast: ToastState; onDismiss: (id:
   }, [t.id, onDismiss]);
 
   const bg = t.type === "success"
-    ? "bg-emerald-600"
-    : "bg-red-600";
+    ? "bg-gradient-to-r from-emerald-500 to-teal-500"
+    : "bg-gradient-to-r from-rose-500 to-red-500";
 
   return (
     <div
-      className={`${bg} text-white text-sm font-medium px-4 py-3 rounded-xl shadow-lg pointer-events-auto animate-[slideIn_0.2s_ease-out]`}
+      className={`${bg} text-white text-sm font-medium px-4 py-3 rounded-2xl shadow-lg backdrop-blur-sm pointer-events-auto animate-[slideIn_0.2s_ease-out] flex items-center gap-2`}
       style={{ minWidth: 200, maxWidth: 360 }}
       onClick={() => onDismiss(t.id)}
     >
+      {t.type === "success" ? (
+        <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+      ) : (
+        <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+      )}
       {t.message}
     </div>
   );

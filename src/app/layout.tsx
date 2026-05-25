@@ -29,10 +29,10 @@ export default function RootLayout({
   return (
     <html lang="en" className={plusJakarta.className}>
       <head>
-        <meta name="theme-color" content="#ffffff" />
+        <meta name="theme-color" content="#f7f6f3" />
         <link rel="apple-touch-icon" href="/icon-192.svg" />
       </head>
-      <body className="min-h-screen bg-slate-50 antialiased">
+      <body className="min-h-screen bg-[#f7f6f3] antialiased relative">
         <AuthProvider>{children}</AuthProvider>
       </body>
     </html>

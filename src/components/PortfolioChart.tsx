@@ -50,9 +50,13 @@ export default function PortfolioChart({ snapshots, transactions = [] }: Props) 
 
   if (snapshots.length === 0) {
     return (
-      <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Portfolio Performance</h2>
-        <div className="flex items-center justify-center h-40 sm:h-64 text-gray-400 text-sm text-center px-4">
+      <div className="bg-white rounded-2xl p-4 sm:p-6 shadow-md shadow-black/5">
+        <div className="flex items-center gap-2 mb-4">
+          <svg className="w-5 h-5 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"/></svg>
+          <h2 className="text-lg font-semibold text-gray-900">Portfolio Performance</h2>
+        </div>
+        <div className="flex flex-col items-center justify-center h-40 sm:h-64 text-gray-400 text-sm text-center px-4">
+          <svg className="w-10 h-10 text-gray-300 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"/></svg>
           Add stocks and refresh prices to see your portfolio chart
         </div>
       </div>
@@ -94,17 +98,20 @@ export default function PortfolioChart({ snapshots, transactions = [] }: Props) 
     }).format(n);
 
   return (
-    <div className="bg-white border border-gray-200 rounded-xl p-4 sm:p-6 shadow-sm">
+    <div className="bg-white rounded-2xl p-4 sm:p-6 shadow-md shadow-black/5">
       <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
-        <h2 className="text-lg font-semibold text-gray-900">Portfolio Performance</h2>
-        <div className="flex gap-1 bg-gray-100 rounded-lg p-0.5">
+        <div className="flex items-center gap-2">
+          <svg className="w-5 h-5 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"/></svg>
+          <h2 className="text-lg font-semibold text-gray-900">Portfolio Performance</h2>
+        </div>
+        <div className="flex gap-1 bg-gray-100 rounded-xl p-0.5">
           {RANGES.map((r) => (
             <button
               key={r}
               onClick={() => setRange(r)}
               className={`px-2.5 py-1 text-xs font-medium rounded-md transition-colors ${
                 range === r
-                  ? "bg-white text-blue-600 shadow-sm"
+                  ? "bg-indigo-600 text-white shadow-sm"
                   : "text-gray-500 hover:text-gray-700"
               }`}
             >

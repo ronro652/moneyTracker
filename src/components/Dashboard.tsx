@@ -11,6 +11,7 @@ import PortfolioAllocation from "./PortfolioAllocation";
 import TransactionHistory from "./TransactionHistory";
 import DividendHistory from "./DividendHistory";
 import DashboardSettings from "./DashboardSettings";
+import ExpectedDividends from "./ExpectedDividends";
 import StockMonitor from "./StockMonitor";
 import { useAuth } from "./AuthProvider";
 import { ToastProvider } from "./Toast";
@@ -212,6 +213,8 @@ export default function Dashboard() {
         return <TransactionHistory key={widget.id} transactions={transactions} />;
       case "dividends":
         return <DividendHistory key={widget.id} dividends={dividends} />;
+      case "expected-dividends":
+        return <ExpectedDividends key={widget.id} activePortfolioId={activePortfolioId} />;
       default:
         return null;
     }
@@ -219,8 +222,8 @@ export default function Dashboard() {
 
   return (
     <ToastProvider>
-    <div className="min-h-screen bg-slate-50 text-gray-800">
-      <header className="border-b border-gray-200 bg-white/80 backdrop-blur-md sticky top-0 z-10">
+    <div className="min-h-screen bg-[#f7f6f3] text-gray-800">
+      <header className="bg-white/90 backdrop-blur-xl sticky top-0 z-10 shadow-sm">
         <div className="max-w-[1400px] mx-auto px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <button
@@ -231,22 +234,27 @@ export default function Dashboard() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
               </svg>
             </button>
-            <div>
-              <h1 className="text-lg sm:text-xl font-bold text-gray-900">Money Tracker</h1>
-              <p className="text-xs text-gray-400">
+            <div className="min-w-0">
+              <h1 className="text-base sm:text-xl font-bold text-gray-900 flex items-center gap-1.5 whitespace-nowrap">
+                <svg className="w-4 h-4 sm:w-5 sm:h-5 text-indigo-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                </svg>
+                <span className="truncate">Money Tracker</span>
+              </h1>
+              <p className="text-[11px] sm:text-xs text-gray-400 truncate">
                 {activePortfolio ? activePortfolio.name : "All Portfolios"}
-                {ilsRate && <span className="ml-2">USD/ILS {ilsRate.toFixed(2)}</span>}
+                {ilsRate && <span className="ml-1.5 hidden sm:inline">USD/ILS {ilsRate.toFixed(2)}</span>}
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-2 sm:gap-3">
+          <div className="flex items-center gap-1.5 sm:gap-3">
             {/* View toggle */}
-            <div className="flex bg-gray-100 rounded-lg p-0.5">
+            <div className="flex bg-gray-100 rounded-xl p-0.5">
               <button
                 onClick={() => setView("monitor")}
-                className={`text-xs font-medium px-2.5 py-1.5 rounded-md transition-colors ${
+                className={`text-xs font-medium px-2 sm:px-2.5 py-1.5 rounded-md transition-colors ${
                   view === "monitor"
-                    ? "bg-white text-gray-900 shadow-sm"
+                    ? "bg-indigo-600 text-white shadow-sm"
                     : "text-gray-500 hover:text-gray-700"
                 }`}
               >
@@ -257,9 +265,9 @@ export default function Dashboard() {
               </button>
               <button
                 onClick={() => setView("dashboard")}
-                className={`text-xs font-medium px-2.5 py-1.5 rounded-md transition-colors ${
+                className={`text-xs font-medium px-2 sm:px-2.5 py-1.5 rounded-md transition-colors ${
                   view === "dashboard"
-                    ? "bg-white text-gray-900 shadow-sm"
+                    ? "bg-indigo-600 text-white shadow-sm"
                     : "text-gray-500 hover:text-gray-700"
                 }`}
               >
@@ -279,7 +287,7 @@ export default function Dashboard() {
             )}
             <button
               onClick={logout}
-              className="p-2 text-gray-400 hover:text-gray-700 transition-colors"
+              className="hidden sm:block p-2 text-gray-400 hover:text-gray-700 transition-colors"
               title={`Sign out (${user?.name})`}
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -290,10 +298,10 @@ export default function Dashboard() {
               <>
                 <button
                   onClick={() => setShowSettings(true)}
-                  className="p-2 text-gray-400 hover:text-gray-700 transition-colors"
+                  className="p-1.5 sm:p-2 text-gray-400 hover:text-gray-700 transition-colors"
                   title="Dashboard settings"
                 >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                   </svg>
@@ -301,37 +309,33 @@ export default function Dashboard() {
                 <button
                   onClick={refreshPrices}
                   disabled={refreshing}
-                  className="bg-blue-600 hover:bg-blue-500 active:bg-blue-700 disabled:bg-gray-300 text-white text-sm font-medium px-3 sm:px-4 py-2 rounded-lg transition-colors flex items-center gap-2"
+                  className="bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 active:from-indigo-700 active:to-violet-700 disabled:bg-gray-300 disabled:from-gray-300 disabled:to-gray-300 text-white text-sm font-medium p-2 sm:px-4 sm:py-2 rounded-xl transition-colors flex items-center gap-2"
                 >
                   {refreshing ? (
-                    <>
-                      <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                      </svg>
-                      <span className="hidden sm:inline">Refreshing...</span>
-                    </>
+                    <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                    </svg>
                   ) : (
-                    <>
-                      <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                      </svg>
-                      <span className="hidden sm:inline">Refresh Prices</span>
-                    </>
+                    <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                    </svg>
                   )}
+                  <span className="hidden sm:inline">{refreshing ? "Refreshing..." : "Refresh Prices"}</span>
                 </button>
               </>
             )}
           </div>
         </div>
+        <div className="h-0.5 bg-gradient-to-r from-indigo-500 via-violet-500 to-amber-400" />
       </header>
 
       {/* Mobile sidebar overlay */}
       {sidebarOpen && (
         <div className="fixed inset-0 z-30 lg:hidden" onClick={() => setSidebarOpen(false)}>
-          <div className="absolute inset-0 bg-black/20" />
+          <div className="absolute inset-0 bg-black/30" />
           <div
-            className="absolute left-0 top-0 bottom-0 w-72 bg-white border-r border-gray-200 p-4 pt-20 overflow-y-auto shadow-xl"
+            className="absolute left-0 top-0 bottom-0 w-72 bg-white rounded-r-2xl p-4 pt-20 overflow-y-auto shadow-xl"
             onClick={(e) => e.stopPropagation()}
           >
             <PortfolioSidebar
@@ -390,7 +394,7 @@ export default function Dashboard() {
           {/* Mobile FAB */}
           <button
             onClick={() => setShowAddSheet(true)}
-            className="md:hidden fixed right-4 bottom-6 z-30 w-14 h-14 bg-blue-600 active:bg-blue-700 text-white rounded-full shadow-lg shadow-blue-600/25 flex items-center justify-center"
+            className="md:hidden fixed right-4 bottom-6 z-30 w-14 h-14 bg-gradient-to-br from-indigo-500 to-violet-600 active:from-indigo-600 active:to-violet-700 text-white rounded-2xl shadow-lg shadow-indigo-500/30 flex items-center justify-center"
             style={{ bottom: "calc(1.5rem + env(safe-area-inset-bottom))" }}
           >
             <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">

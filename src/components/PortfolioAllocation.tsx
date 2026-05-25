@@ -23,17 +23,26 @@ export default function PortfolioAllocation({ holdings, portfolios, activePortfo
 
     if (portfolioValues.length === 0) {
       return (
-        <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Portfolio Allocation</h2>
-          <p className="text-gray-400 text-center py-8">No holdings across portfolios yet.</p>
+        <div className="bg-white rounded-2xl p-6 shadow-md shadow-black/5">
+          <div className="flex items-center gap-2 mb-4">
+            <svg className="w-5 h-5 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z"/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z"/></svg>
+            <h2 className="text-lg font-semibold text-gray-900">Portfolio Allocation</h2>
+          </div>
+          <div className="flex flex-col items-center justify-center py-8 text-gray-400">
+            <svg className="w-10 h-10 text-gray-300 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z"/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z"/></svg>
+            <p className="text-sm">No holdings across portfolios yet.</p>
+          </div>
         </div>
       );
     }
 
     return (
-      <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Portfolio Allocation</h2>
-        <div className="flex h-4 rounded-full overflow-hidden mb-4">
+      <div className="bg-white rounded-2xl p-6 shadow-md shadow-black/5">
+        <div className="flex items-center gap-2 mb-4">
+          <svg className="w-5 h-5 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z"/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z"/></svg>
+          <h2 className="text-lg font-semibold text-gray-900">Portfolio Allocation</h2>
+        </div>
+        <div className="flex rounded-full h-5 overflow-hidden mb-4">
           {portfolioValues.map((pv) => (
             <div
               key={pv.portfolio.id}
@@ -48,7 +57,7 @@ export default function PortfolioAllocation({ holdings, portfolios, activePortfo
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {portfolioValues.map((pv) => (
-            <div key={pv.portfolio.id} className="flex items-center gap-3 px-3 py-2 rounded-lg bg-gray-50">
+            <div key={pv.portfolio.id} className="flex items-center gap-3 px-3 py-2 rounded-xl bg-gray-50/80 hover:bg-gray-100/80 transition-colors">
               <span className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: pv.portfolio.color }} />
               <div className="flex-1 min-w-0">
                 <p className="text-sm text-gray-700 truncate">{pv.portfolio.name}</p>
@@ -82,19 +91,28 @@ export default function PortfolioAllocation({ holdings, portfolios, activePortfo
 
   if (tickerValues.length === 0) {
     return (
-      <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Holdings Allocation</h2>
-        <p className="text-gray-400 text-center py-8">No priced holdings in this portfolio.</p>
+      <div className="bg-white rounded-2xl p-6 shadow-md shadow-black/5">
+        <div className="flex items-center gap-2 mb-4">
+          <svg className="w-5 h-5 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z"/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z"/></svg>
+          <h2 className="text-lg font-semibold text-gray-900">Holdings Allocation</h2>
+        </div>
+        <div className="flex flex-col items-center justify-center py-8 text-gray-400">
+          <svg className="w-10 h-10 text-gray-300 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z"/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z"/></svg>
+          <p className="text-sm">No priced holdings in this portfolio.</p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
-      <h2 className="text-lg font-semibold text-gray-900 mb-4">
-        {portfolio ? `${portfolio.name} — ` : ""}Holdings Allocation
-      </h2>
-      <div className="flex h-4 rounded-full overflow-hidden mb-4">
+    <div className="bg-white rounded-2xl p-6 shadow-md shadow-black/5">
+      <div className="flex items-center gap-2 mb-4">
+        <svg className="w-5 h-5 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z"/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z"/></svg>
+        <h2 className="text-lg font-semibold text-gray-900">
+          {portfolio ? `${portfolio.name} — ` : ""}Holdings Allocation
+        </h2>
+      </div>
+      <div className="flex rounded-full h-5 overflow-hidden mb-4">
         {tickerValues.map((t, i) => (
           <div
             key={t.ticker}
@@ -109,7 +127,7 @@ export default function PortfolioAllocation({ holdings, portfolios, activePortfo
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         {tickerValues.map((t, i) => (
-          <div key={t.ticker} className="flex items-center gap-3 px-3 py-2 rounded-lg bg-gray-50">
+          <div key={t.ticker} className="flex items-center gap-3 px-3 py-2 rounded-xl bg-gray-50/80 hover:bg-gray-100/80 transition-colors">
             <span
               className="w-3 h-3 rounded-full flex-shrink-0"
               style={{ backgroundColor: tickerColors[i % tickerColors.length] }}
