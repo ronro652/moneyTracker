@@ -185,6 +185,19 @@ export interface IntradayCandle {
   close: number;
 }
 
+export interface ChartMeta {
+  dayHigh: number | null;
+  dayLow: number | null;
+  fiftyTwoWeekHigh: number | null;
+  fiftyTwoWeekLow: number | null;
+  previousClose: number | null;
+}
+
+export interface IntradayChartData {
+  candles: IntradayCandle[];
+  meta: ChartMeta;
+}
+
 const YAHOO_BASE = "https://query1.finance.yahoo.com/v8/finance/chart";
 
 function toYahooSymbol(ticker: string, assetType: "stock" | "crypto"): string {
@@ -195,7 +208,11 @@ function toYahooSymbol(ticker: string, assetType: "stock" | "crypto"): string {
 export async function fetchIntradayCandles(
   ticker: string,
   assetType: "stock" | "crypto" = "stock",
-): Promise<IntradayCandle[]> {
+): Promise<IntradayChartData> {
+  const empty: IntradayChartData = {
+    candles: [],
+    meta: { dayHigh: null, dayLow: null, fiftyTwoWeekHigh: null, fiftyTwoWeekLow: null, previousClose: null },
+  };
   try {
     const symbol = toYahooSymbol(ticker, assetType);
     const url = `${YAHOO_BASE}/${encodeURIComponent(symbol)}?interval=5m&range=1d`;
@@ -205,16 +222,27 @@ export async function fetchIntradayCandles(
     const data = await res.json();
 
     const result = data?.chart?.result?.[0];
-    if (!result?.timestamp || !result?.indicators?.quote?.[0]?.close) return [];
+    if (!result?.timestamp || !result?.indicators?.quote?.[0]?.close) return empty;
 
     const timestamps: number[] = result.timestamp;
     const closes: (number | null)[] = result.indicators.quote[0].close;
 
-    return timestamps
+    const candles = timestamps
       .map((t, i) => ({ timestamp: t, close: closes[i] }))
       .filter((c): c is IntradayCandle => c.close !== null);
+
+    const m = result.meta || {};
+    const meta: ChartMeta = {
+      dayHigh: m.regularMarketDayHigh ?? null,
+      dayLow: m.regularMarketDayLow ?? null,
+      fiftyTwoWeekHigh: m.fiftyTwoWeekHigh ?? null,
+      fiftyTwoWeekLow: m.fiftyTwoWeekLow ?? null,
+      previousClose: m.previousClose ?? null,
+    };
+
+    return { candles, meta };
   } catch {
-    return [];
+    return empty;
   }
 }
 

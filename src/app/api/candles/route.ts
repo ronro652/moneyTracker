@@ -13,7 +13,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "ticker is required" }, { status: 400 });
   }
 
-  const candles = await fetchIntradayCandles(ticker, assetType);
+  const { candles, meta } = await fetchIntradayCandles(ticker, assetType);
 
-  return NextResponse.json({ candles });
+  return NextResponse.json({ candles, meta });
 }

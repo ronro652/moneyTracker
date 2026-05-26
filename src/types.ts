@@ -90,6 +90,14 @@ export interface IntradayCandle {
   close: number;
 }
 
+export interface ChartMeta {
+  dayHigh: number | null;
+  dayLow: number | null;
+  fiftyTwoWeekHigh: number | null;
+  fiftyTwoWeekLow: number | null;
+  previousClose: number | null;
+}
+
 export type WidgetType = "summary" | "chart" | "profit-chart" | "holdings" | "add-stock" | "allocation" | "transactions" | "dividends" | "expected-dividends";
 
 export interface DashboardWidget {
