@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { Holding, Portfolio } from "@/types";
+import StockDayChart from "./StockDayChart";
 
 interface Props {
   holdings: Holding[];
@@ -73,6 +74,7 @@ const fmtCompact = (n: number) =>
 
 export default function StockMonitor({ holdings, portfolios, refreshing, lastUpdated, onRefresh }: Props) {
   const [sortKey, setSortKey] = useState<SortKey>("value");
+  const [expandedTicker, setExpandedTicker] = useState<string | null>(null);
 
   const totalValue = useMemo(
     () => holdings.reduce((s, h) => s + (h.current_price || 0) * h.shares, 0),
@@ -195,12 +197,14 @@ export default function StockMonitor({ holdings, portfolios, refreshing, lastUpd
         {sorted.map((h, index) => {
           const { value, gain, gainPct } = getAggFields(h);
           const dayBorder = h.dayChange > 0 ? "border-l-4 border-emerald-400" : h.dayChange < 0 ? "border-l-4 border-rose-400" : "border-l-4 border-gray-200";
+          const isExpanded = expandedTicker === h.ticker;
 
           return (
             <div
               key={h.ticker}
-              className={`bg-white ${dayBorder} rounded-2xl px-5 py-4 shadow-md shadow-black/5 hover:shadow-lg transition-all`}
+              className={`bg-white ${dayBorder} rounded-2xl px-5 py-4 shadow-md shadow-black/5 hover:shadow-lg transition-all cursor-pointer`}
               style={{ animation: 'slideUp 0.3s ease-out', animationDelay: `${index * 40}ms`, animationFillMode: 'both' }}
+              onClick={() => setExpandedTicker(isExpanded ? null : h.ticker)}
             >
               <div className="flex items-center justify-between">
                 {/* Left: ticker + name */}
@@ -216,16 +220,26 @@ export default function StockMonitor({ holdings, portfolios, refreshing, lastUpd
                   <p className="text-sm text-gray-500 truncate">{h.name}</p>
                 </div>
 
-                {/* Right: price + day change */}
-                <div className="text-right flex-shrink-0">
-                  <p className="font-bold text-gray-900 text-lg">
-                    {h.price > 0 ? fmt(h.price) : "—"}
-                  </p>
-                  {h.price > 0 && (
-                    <p className={`text-sm font-semibold ${h.dayChange >= 0 ? "text-emerald-600" : "text-rose-500"}`}>
-                      {h.dayChange >= 0 ? "+" : ""}{h.dayChange.toFixed(2)}%
+                {/* Right: price + day change + chevron */}
+                <div className="flex items-center gap-2">
+                  <div className="text-right flex-shrink-0">
+                    <p className="font-bold text-gray-900 text-lg">
+                      {h.price > 0 ? fmt(h.price) : "—"}
                     </p>
-                  )}
+                    {h.price > 0 && (
+                      <p className={`text-sm font-semibold ${h.dayChange >= 0 ? "text-emerald-600" : "text-rose-500"}`}>
+                        {h.dayChange >= 0 ? "+" : ""}{h.dayChange.toFixed(2)}%
+                      </p>
+                    )}
+                  </div>
+                  <svg
+                    className={`w-4 h-4 text-gray-400 transition-transform ${isExpanded ? "rotate-180" : ""}`}
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
                 </div>
               </div>
 
@@ -248,6 +262,11 @@ export default function StockMonitor({ holdings, portfolios, refreshing, lastUpd
                     </p>
                   </div>
                 </div>
+              )}
+
+              {/* Expandable day chart */}
+              {isExpanded && (
+                <StockDayChart ticker={h.ticker} assetType={h.asset_type} />
               )}
             </div>
           );

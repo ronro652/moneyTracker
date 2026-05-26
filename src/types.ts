@@ -85,6 +85,11 @@ export interface ExpectedDividend {
   days_until: number;
 }
 
+export interface IntradayCandle {
+  timestamp: number;
+  close: number;
+}
+
 export type WidgetType = "summary" | "chart" | "profit-chart" | "holdings" | "add-stock" | "allocation" | "transactions" | "dividends" | "expected-dividends";
 
 export interface DashboardWidget {
