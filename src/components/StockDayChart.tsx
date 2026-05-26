@@ -24,6 +24,22 @@ const fmt = (n: number) =>
     maximumFractionDigits: 2,
   }).format(n);
 
+const cache = new Map<string, { candles: IntradayCandle[]; ts: number }>();
+const CACHE_TTL = 5 * 60 * 1000;
+
+async function fetchCandles(ticker: string, assetType: "stock" | "crypto"): Promise<IntradayCandle[]> {
+  const key = `${ticker}-${assetType}`;
+  const cached = cache.get(key);
+  if (cached && Date.now() - cached.ts < CACHE_TTL) return cached.candles;
+
+  const res = await fetch(`/api/candles?ticker=${encodeURIComponent(ticker)}&asset_type=${assetType}`);
+  const data = await res.json();
+  const candles: IntradayCandle[] = data.candles ?? [];
+
+  cache.set(key, { candles, ts: Date.now() });
+  return candles;
+}
+
 export default function StockDayChart({ ticker, assetType }: Props) {
   const [candles, setCandles] = useState<IntradayCandle[]>([]);
   const [loading, setLoading] = useState(true);
@@ -34,11 +50,10 @@ export default function StockDayChart({ ticker, assetType }: Props) {
     setLoading(true);
     setError(false);
 
-    fetch(`/api/candles?ticker=${encodeURIComponent(ticker)}&asset_type=${assetType}`)
-      .then((r) => r.json())
+    fetchCandles(ticker, assetType)
       .then((data) => {
         if (cancelled) return;
-        setCandles(data.candles ?? []);
+        setCandles(data);
         setLoading(false);
       })
       .catch(() => {
