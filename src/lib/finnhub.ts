@@ -180,6 +180,72 @@ export async function fetchDividends(
   }
 }
 
+export interface IntradayCandle {
+  timestamp: number;
+  close: number;
+}
+
+export interface ChartMeta {
+  dayHigh: number | null;
+  dayLow: number | null;
+  fiftyTwoWeekHigh: number | null;
+  fiftyTwoWeekLow: number | null;
+  previousClose: number | null;
+}
+
+export interface IntradayChartData {
+  candles: IntradayCandle[];
+  meta: ChartMeta;
+}
+
+const YAHOO_BASE = "https://query1.finance.yahoo.com/v8/finance/chart";
+
+function toYahooSymbol(ticker: string, assetType: "stock" | "crypto"): string {
+  if (assetType === "crypto") return `${ticker.toUpperCase()}-USD`;
+  return ticker.toUpperCase();
+}
+
+export async function fetchIntradayCandles(
+  ticker: string,
+  assetType: "stock" | "crypto" = "stock",
+): Promise<IntradayChartData> {
+  const empty: IntradayChartData = {
+    candles: [],
+    meta: { dayHigh: null, dayLow: null, fiftyTwoWeekHigh: null, fiftyTwoWeekLow: null, previousClose: null },
+  };
+  try {
+    const symbol = toYahooSymbol(ticker, assetType);
+    const url = `${YAHOO_BASE}/${encodeURIComponent(symbol)}?interval=5m&range=1d`;
+    const res = await fetch(url, {
+      headers: { "User-Agent": "Mozilla/5.0" },
+    });
+    const data = await res.json();
+
+    const result = data?.chart?.result?.[0];
+    if (!result?.timestamp || !result?.indicators?.quote?.[0]?.close) return empty;
+
+    const timestamps: number[] = result.timestamp;
+    const closes: (number | null)[] = result.indicators.quote[0].close;
+
+    const candles = timestamps
+      .map((t, i) => ({ timestamp: t, close: closes[i] }))
+      .filter((c): c is IntradayCandle => c.close !== null);
+
+    const m = result.meta || {};
+    const meta: ChartMeta = {
+      dayHigh: m.regularMarketDayHigh ?? null,
+      dayLow: m.regularMarketDayLow ?? null,
+      fiftyTwoWeekHigh: m.fiftyTwoWeekHigh ?? null,
+      fiftyTwoWeekLow: m.fiftyTwoWeekLow ?? null,
+      previousClose: m.previousClose ?? null,
+    };
+
+    return { candles, meta };
+  } catch {
+    return empty;
+  }
+}
+
 export function searchCrypto(query: string): { ticker: string; name: string }[] {
   const q = query.toLowerCase();
   return CRYPTO_LIST.filter(
