@@ -111,7 +111,11 @@ src/
 │   ├── TransactionHistory.tsx      # Buy/sell log
 │   ├── DividendHistory.tsx         # Dividend income log
 │   ├── ExpectedDividends.tsx       # Upcoming dividend projections
-│   └── PortfolioAllocation.tsx     # Pie chart breakdown
+│   ├── PortfolioAllocation.tsx     # Pie chart breakdown
+│   ├── PortfolioSidebar.tsx        # Portfolio selector sidebar
+│   ├── StockMonitor.tsx            # Intraday stock monitor view
+│   ├── DashboardSettings.tsx       # Widget visibility/order config
+│   └── Toast.tsx                   # Toast notification system
 ├── lib/
 │   ├── db/schema.ts               # Database table definitions (Drizzle)
 │   ├── db/index.ts                 # Database client connection
@@ -124,7 +128,7 @@ src/
 │   └── logger.ts                  # Pino structured logger
 ├── types.ts                        # Shared TypeScript interfaces
 scripts/
-├── migrate-sqlite-to-pg.ts        # One-time migration from old SQLite DB
+├── backup.sh                      # Database backup with rotation (pg_dump)
 ```
 
 ---
@@ -166,8 +170,6 @@ Neon's free tier has limits (compute hours, storage). For more users:
 
 ### 5. Security Hardening
 
-- ~~CSRF protection~~ — ✅ Origin-based middleware blocks cross-origin mutations
-- ~~Password complexity~~ — ✅ min 8 chars, requires uppercase + lowercase + number
 - Add input sanitization beyond Zod validation
 - Use environment-based secrets rotation
 - Add 2FA support if handling real financial data
@@ -222,7 +224,6 @@ This is the big one — instead of manually entering every trade, connect direct
 
 | Feature | Difficulty | Impact |
 |---------|-----------|--------|
-| ~~**Dividend tracking**~~ — ✅ shipped (manual entry + auto-detection) | ~~Medium~~ | ~~High~~ |
 | **Watchlist** — track stocks you're interested in but don't own | Easy | Medium |
 | **Alerts** — notify when a stock hits a target price | Medium | High |
 | **Multiple currencies** — support EUR, GBP, not just USD/ILS | Medium | Medium |
@@ -249,5 +250,4 @@ This is the big one — instead of manually entering every trade, connect direct
 | Auth | Custom sessions — cookie-based, 30-day expiry |
 | Health check | `GET /api/health` — returns DB connectivity status |
 | CI pipeline | GitHub Actions — lint, type-check, build on every PR to main |
-| Version | Semver in `package.json` — currently 1.0.0 |
-| Old database | `money-tracker.db` (SQLite, no longer used — was migrated to Postgres) |
+| Version | Semver in `package.json` — currently 1.1.0 |
