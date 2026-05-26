@@ -33,7 +33,7 @@ describe("registerSchema", () => {
     const result = registerSchema.safeParse({
       email: "user@test.com",
       name: "Ron",
-      password: "123456",
+      password: "Secret1x",
     });
     expect(result.success).toBe(true);
   });
@@ -42,7 +42,34 @@ describe("registerSchema", () => {
     const result = registerSchema.safeParse({
       email: "user@test.com",
       name: "Ron",
-      password: "12345",
+      password: "Ab1",
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it("rejects password without uppercase", () => {
+    const result = registerSchema.safeParse({
+      email: "user@test.com",
+      name: "Ron",
+      password: "secret1x",
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it("rejects password without lowercase", () => {
+    const result = registerSchema.safeParse({
+      email: "user@test.com",
+      name: "Ron",
+      password: "SECRET1X",
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it("rejects password without number", () => {
+    const result = registerSchema.safeParse({
+      email: "user@test.com",
+      name: "Ron",
+      password: "Secretxx",
     });
     expect(result.success).toBe(false);
   });
@@ -51,7 +78,7 @@ describe("registerSchema", () => {
     const result = registerSchema.safeParse({
       email: "user@test.com",
       name: "",
-      password: "123456",
+      password: "Secret1x",
     });
     expect(result.success).toBe(false);
   });
@@ -60,7 +87,7 @@ describe("registerSchema", () => {
     const result = registerSchema.safeParse({
       email: "User@TEST.com",
       name: "Ron",
-      password: "123456",
+      password: "Secret1x",
     });
     expect(result.success).toBe(true);
     if (result.success) {

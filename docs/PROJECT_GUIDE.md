@@ -166,10 +166,17 @@ Neon's free tier has limits (compute hours, storage). For more users:
 
 ### 5. Security Hardening
 
-- Add CSRF protection
+- ~~CSRF protection~~ — ✅ Origin-based middleware blocks cross-origin mutations
+- ~~Password complexity~~ — ✅ min 8 chars, requires uppercase + lowercase + number
 - Add input sanitization beyond Zod validation
 - Use environment-based secrets rotation
 - Add 2FA support if handling real financial data
+
+### 6. Database Backups
+
+- **Neon PITR**: Neon provides built-in point-in-time recovery on paid plans (up to 7 days). Check your Neon dashboard for restore options.
+- **Manual backups**: Run `./scripts/backup.sh` to dump the database to a timestamped `.sql.gz` file in `/backups`. The script auto-cleans to keep only the last 10 backups.
+- **Recommended cadence**: Run the backup script before deployments and weekly via cron (e.g. `crontab -e` → `0 2 * * 0 /path/to/scripts/backup.sh`)
 
 ---
 
