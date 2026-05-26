@@ -2,11 +2,20 @@ import { db } from "@/lib/db";
 import { users, portfolios } from "@/lib/db/schema";
 import { hashPassword, createSession, setSessionCookie } from "@/lib/auth";
 import { registerSchema } from "@/lib/validations";
+import { rateLimit } from "@/lib/rate-limit";
+import { logger } from "@/lib/logger";
 import { eq } from "drizzle-orm";
 import { NextRequest, NextResponse } from "next/server";
 import { PORTFOLIO_COLORS } from "@/types";
 
 export async function POST(req: NextRequest) {
+  const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
+  const { ok } = rateLimit(`register:${ip}`, 3);
+  if (!ok) {
+    logger.warn({ ip }, "Register rate limit exceeded");
+    return NextResponse.json({ error: "Too many registration attempts. Try again in a minute." }, { status: 429 });
+  }
+
   const parsed = registerSchema.safeParse(await req.json());
   if (!parsed.success) {
     return NextResponse.json({ error: parsed.error.issues[0].message }, { status: 400 });
@@ -34,5 +43,6 @@ export async function POST(req: NextRequest) {
   const token = await createSession(user.id);
   setSessionCookie(token);
 
+  logger.info({ userId: user.id }, "New user registered");
   return NextResponse.json({ id: user.id, email, name }, { status: 201 });
 }

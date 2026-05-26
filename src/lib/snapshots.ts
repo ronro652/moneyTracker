@@ -9,6 +9,7 @@ import {
 } from "./db/schema";
 import { eq, and, gt } from "drizzle-orm";
 import { fetchStockQuote, fetchCryptoQuote, fetchDividends } from "./finnhub";
+import { logger } from "./logger";
 
 const BUCKET_HOURS = 3;
 
@@ -49,7 +50,7 @@ export async function refreshPricesAndSnapshot(userId: number) {
           ? await fetchCryptoQuote(ticker)
           : await fetchStockQuote(ticker);
     } catch (e) {
-      console.error(`[prices] Failed to fetch ${ticker}:`, e);
+      logger.error({ ticker, err: e }, "Failed to fetch price");
     }
 
     if (quote) {
@@ -161,7 +162,7 @@ export async function refreshDividends(userId: number) {
     try {
       apiDividends = await fetchDividends(h.ticker, from, to);
     } catch (e) {
-      console.error(`[dividends] Failed to fetch ${h.ticker}:`, e);
+      logger.error({ ticker: h.ticker, err: e }, "Failed to fetch dividends");
       continue;
     }
 
@@ -198,10 +199,8 @@ export async function refreshAllUsers() {
       await refreshPricesAndSnapshot(id);
       await refreshDividends(id);
     } catch (e) {
-      console.error(`[snapshot-cron] Failed for user ${id}:`, e);
+      logger.error({ userId: id, err: e }, "Cron snapshot failed for user");
     }
   }
-  console.log(
-    `[snapshot-cron] Completed for ${allUsers.length} user(s) at ${new Date().toISOString()}`,
-  );
+  logger.info({ userCount: allUsers.length }, "Cron snapshot completed");
 }
