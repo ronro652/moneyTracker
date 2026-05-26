@@ -58,7 +58,9 @@ function getAggFields(h: AggregatedHolding) {
   const value = h.price * h.shares;
   const gain = (h.price - h.avgCost) * h.shares;
   const gainPct = h.avgCost > 0 ? ((h.price - h.avgCost) / h.avgCost) * 100 : 0;
-  return { value, gain, gainPct };
+  const prevPrice = h.dayChange !== 0 ? h.price / (1 + h.dayChange / 100) : h.price;
+  const dayDollar = (h.price - prevPrice) * h.shares;
+  return { value, gain, gainPct, dayDollar };
 }
 
 const fmt = (n: number) =>
@@ -149,25 +151,29 @@ export default function StockMonitor({ holdings, portfolios, refreshing, lastUpd
             </svg>
           </button>
         </div>
-        <div className="flex items-center gap-4 mt-2">
-          <div>
-            <span className="text-xs text-white/70">Today </span>
-            <span className={`text-sm font-semibold ${totalDayChange >= 0 ? "text-emerald-300" : "text-rose-300"}`}>
-              {totalDayChange >= 0 ? "+" : ""}{fmt(totalDayChange)}
-              <span className="ml-1 opacity-75">({totalDayPct >= 0 ? "+" : ""}{totalDayPct.toFixed(2)}%)</span>
-            </span>
-          </div>
-          <div>
-            <span className="text-xs text-white/70">Total </span>
-            <span className={`text-sm font-semibold ${totalGain >= 0 ? "text-emerald-300" : "text-rose-300"}`}>
-              {totalGain >= 0 ? "+" : ""}{fmtCompact(totalGain)}
-              <span className="ml-1 opacity-75">({totalGainPct >= 0 ? "+" : ""}{totalGainPct.toFixed(1)}%)</span>
-            </span>
-          </div>
+
+        <div className="mt-3 pt-3 border-t border-white/10">
+          <p className="text-xs text-white/50 uppercase tracking-wide">Today&apos;s Change</p>
+          <p className={`text-3xl font-bold tracking-tight mt-1 ${totalDayChange >= 0 ? "text-emerald-300" : "text-rose-300"}`}>
+            {totalDayChange >= 0 ? "+" : ""}{fmt(totalDayChange)}
+          </p>
+          <p className={`text-sm font-semibold mt-0.5 ${totalDayChange >= 0 ? "text-emerald-300/70" : "text-rose-300/70"}`}>
+            {totalDayPct >= 0 ? "+" : ""}{totalDayPct.toFixed(2)}%
+          </p>
         </div>
-        {lastUpdated && (
-          <p className="text-[11px] text-white/40 mt-2">Updated {lastUpdated}</p>
-        )}
+
+        <div className="flex items-center justify-between mt-3 pt-3 border-t border-white/10">
+          <div>
+            <span className="text-xs text-white/50">Total Gain</span>
+            <p className={`text-sm font-semibold ${totalGain >= 0 ? "text-emerald-300" : "text-rose-300"}`}>
+              {totalGain >= 0 ? "+" : ""}{fmtCompact(totalGain)}
+              <span className="ml-1 opacity-70">({totalGainPct >= 0 ? "+" : ""}{totalGainPct.toFixed(1)}%)</span>
+            </p>
+          </div>
+          {lastUpdated && (
+            <p className="text-[11px] text-white/40">Updated {lastUpdated}</p>
+          )}
+        </div>
       </div>
 
       {/* Sort controls */}
@@ -195,7 +201,7 @@ export default function StockMonitor({ holdings, portfolios, refreshing, lastUpd
       {/* Stock list */}
       <div className="space-y-2.5">
         {sorted.map((h, index) => {
-          const { value, gain, gainPct } = getAggFields(h);
+          const { value, gain, gainPct, dayDollar } = getAggFields(h);
           const dayBorder = h.dayChange > 0 ? "border-l-4 border-emerald-400" : h.dayChange < 0 ? "border-l-4 border-rose-400" : "border-l-4 border-gray-200";
           const isExpanded = expandedTicker === h.ticker;
 
@@ -206,8 +212,8 @@ export default function StockMonitor({ holdings, portfolios, refreshing, lastUpd
               style={{ animation: 'slideUp 0.3s ease-out', animationDelay: `${index * 40}ms`, animationFillMode: 'both' }}
               onClick={() => setExpandedTicker(isExpanded ? null : h.ticker)}
             >
-              <div className="flex items-center justify-between">
-                {/* Left: ticker + name */}
+              {/* Top row: ticker + daily change hero */}
+              <div className="flex items-start justify-between">
                 <div className="min-w-0 flex-1 mr-3">
                   <div className="flex items-center gap-2">
                     <span className="font-bold text-gray-900 text-lg">{h.ticker}</span>
@@ -216,49 +222,49 @@ export default function StockMonitor({ holdings, portfolios, refreshing, lastUpd
                         CRYPTO
                       </span>
                     )}
+                    <svg
+                      className={`w-3.5 h-3.5 text-gray-300 transition-transform ${isExpanded ? "rotate-180" : ""}`}
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
                   </div>
-                  <p className="text-sm text-gray-500 truncate">{h.name}</p>
+                  <p className="text-xs text-gray-400 truncate">{h.name}</p>
                 </div>
 
-                {/* Right: price + day change + chevron */}
-                <div className="flex items-center gap-2">
+                {h.price > 0 && (
                   <div className="text-right flex-shrink-0">
-                    <p className="font-bold text-gray-900 text-lg">
-                      {h.price > 0 ? fmt(h.price) : "—"}
+                    <p className={`text-xl font-bold ${h.dayChange >= 0 ? "text-emerald-600" : "text-rose-500"}`}>
+                      {h.dayChange >= 0 ? "+" : ""}{h.dayChange.toFixed(2)}%
                     </p>
-                    {h.price > 0 && (
-                      <p className={`text-sm font-semibold ${h.dayChange >= 0 ? "text-emerald-600" : "text-rose-500"}`}>
-                        {h.dayChange >= 0 ? "+" : ""}{h.dayChange.toFixed(2)}%
-                      </p>
-                    )}
+                    <p className={`text-sm font-semibold ${h.dayChange >= 0 ? "text-emerald-600/70" : "text-rose-500/70"}`}>
+                      {dayDollar >= 0 ? "+" : ""}{fmtCompact(dayDollar)}
+                    </p>
                   </div>
-                  <svg
-                    className={`w-4 h-4 text-gray-400 transition-transform ${isExpanded ? "rotate-180" : ""}`}
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                  </svg>
-                </div>
+                )}
               </div>
 
-              {/* Bottom row: value, shares, gain */}
+              {/* Price + position details */}
               {h.price > 0 && (
-                <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-100">
+                <div className="grid grid-cols-4 gap-2 mt-3 pt-3 border-t border-gray-100">
                   <div>
-                    <span className="text-gray-400 text-xs">Value</span>
+                    <span className="text-gray-400 text-[10px] uppercase tracking-wide">Price</span>
+                    <p className="text-gray-900 font-semibold text-sm">{fmt(h.price)}</p>
+                  </div>
+                  <div>
+                    <span className="text-gray-400 text-[10px] uppercase tracking-wide">Value</span>
                     <p className="text-gray-800 font-semibold text-sm">{fmtCompact(value)}</p>
                   </div>
                   <div>
-                    <span className="text-gray-400 text-xs">Shares</span>
+                    <span className="text-gray-400 text-[10px] uppercase tracking-wide">Shares</span>
                     <p className="text-gray-700 text-sm">{h.shares}</p>
                   </div>
                   <div className="text-right">
-                    <span className="text-gray-400 text-xs">Gain/Loss</span>
+                    <span className="text-gray-400 text-[10px] uppercase tracking-wide">Overall</span>
                     <p className={`font-semibold text-sm ${gain >= 0 ? "text-emerald-600" : "text-rose-500"}`}>
-                      {gain >= 0 ? "+" : ""}{fmtCompact(gain)}
-                      <span className="text-xs opacity-75 ml-0.5">({gainPct >= 0 ? "+" : ""}{gainPct.toFixed(1)}%)</span>
+                      {gain >= 0 ? "+" : ""}{gainPct.toFixed(1)}%
                     </p>
                   </div>
                 </div>
