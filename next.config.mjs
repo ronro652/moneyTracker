@@ -1,8 +1,9 @@
-/** @type {import('next').NextConfig} */
-const nextConfig = {
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
-};
+import { withSentryConfig } from "@sentry/nextjs";
 
-export default nextConfig;
+/** @type {import('next').NextConfig} */
+const nextConfig = {};
+
+export default withSentryConfig(nextConfig, {
+  silent: true,
+  disableLogger: true,
+});
