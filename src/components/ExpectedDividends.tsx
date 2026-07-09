@@ -6,11 +6,14 @@ import { formatShares } from "@/lib/shares";
 
 interface Props {
   activePortfolioId: number | null;
+  /** Bump this to force a re-fetch, e.g. right after a manual dividend is added. */
+  refreshKey?: number;
 }
 
-export default function ExpectedDividends({ activePortfolioId }: Props) {
+export default function ExpectedDividends({ activePortfolioId, refreshKey }: Props) {
   const [expected, setExpected] = useState<ExpectedDividend[]>([]);
   const [loading, setLoading] = useState(true);
+  const [autoDetectionAvailable, setAutoDetectionAvailable] = useState<boolean | null>(null);
 
   const fetchExpected = useCallback(async () => {
     setLoading(true);
@@ -25,7 +28,14 @@ export default function ExpectedDividends({ activePortfolioId }: Props) {
 
   useEffect(() => {
     fetchExpected();
-  }, [fetchExpected]);
+  }, [fetchExpected, refreshKey]);
+
+  useEffect(() => {
+    fetch("/api/dividends/status")
+      .then((res) => res.json())
+      .then((data) => setAutoDetectionAvailable(data.available))
+      .catch(() => {});
+  }, []);
 
   const fmt = (n: number) =>
     new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(n);
@@ -84,6 +94,12 @@ export default function ExpectedDividends({ activePortfolioId }: Props) {
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
           </svg>
           <p className="text-sm">No dividend history to project from yet.</p>
+          {autoDetectionAvailable === false && (
+            <p className="text-xs text-gray-400 mt-1 text-center max-w-xs">
+              Automatic detection isn&apos;t available on the current Finnhub plan.
+              Add dividends manually in Dividend History to see projections here.
+            </p>
+          )}
         </div>
       </div>
     );

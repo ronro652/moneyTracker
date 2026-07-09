@@ -1,3 +1,5 @@
+import { logger } from "./logger";
+
 const API_KEY = process.env.FINNHUB_API_KEY || "";
 const BASE_URL = "https://finnhub.io/api/v1";
 
@@ -158,25 +160,53 @@ export async function fetchExchangeRate(from: string, to: string): Promise<numbe
   }
 }
 
+export interface DividendFetchResult {
+  dividends: FinnhubDividend[];
+  /**
+   * True when Finnhub responded with an error / plan-restriction payload
+   * (the free tier this project is documented to run on is not entitled to
+   * call /stock/dividend) rather than a genuine "no dividends in range"
+   * empty array. Callers should treat this as "auto-detection unavailable",
+   * not as "no dividends for this ticker".
+   */
+  restricted: boolean;
+}
+
 export async function fetchDividends(
   ticker: string,
   from: string,
   to: string,
-): Promise<FinnhubDividend[]> {
+): Promise<DividendFetchResult> {
   try {
     const url = `${BASE_URL}/stock/dividend?symbol=${encodeURIComponent(ticker)}&from=${from}&to=${to}&token=${API_KEY}`;
     const res = await fetch(url);
     const data = await res.json();
-    if (!Array.isArray(data)) return [];
-    return data.map((d: Record<string, unknown>) => ({
-      symbol: d.symbol as string,
-      date: d.date as string,
-      amount: d.amount as number,
-      payDate: d.payDate as string,
-      currency: d.currency as string,
-    }));
-  } catch {
-    return [];
+
+    if (!Array.isArray(data)) {
+      const looksLikeError = !res.ok || (data && typeof data === "object" && "error" in data);
+      if (looksLikeError) {
+        logger.warn(
+          { ticker, status: res.status, body: data },
+          "Finnhub /stock/dividend request failed or is plan-restricted; automatic dividend detection is unavailable",
+        );
+        return { dividends: [], restricted: true };
+      }
+      return { dividends: [], restricted: false };
+    }
+
+    return {
+      dividends: data.map((d: Record<string, unknown>) => ({
+        symbol: d.symbol as string,
+        date: d.date as string,
+        amount: d.amount as number,
+        payDate: d.payDate as string,
+        currency: d.currency as string,
+      })),
+      restricted: false,
+    };
+  } catch (e) {
+    logger.error({ ticker, err: e }, "Failed to fetch dividends from Finnhub");
+    return { dividends: [], restricted: false };
   }
 }
 
