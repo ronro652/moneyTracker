@@ -10,8 +10,7 @@ import {
 import { eq, and, gt } from "drizzle-orm";
 import { fetchStockQuote, fetchCryptoQuote, fetchDividends } from "./finnhub";
 import { logger } from "./logger";
-
-const BUCKET_HOURS = 3;
+import { getBucketKey } from "./dateBucket";
 
 export async function refreshPricesAndSnapshot(userId: number) {
   const userHoldings = await db
@@ -89,8 +88,7 @@ export async function refreshPricesAndSnapshot(userId: number) {
     .where(eq(portfolios.userId, userId));
 
   const now = new Date();
-  const bucket = Math.floor(now.getUTCHours() / BUCKET_HOURS) * BUCKET_HOURS;
-  const snapshotKey = `${now.toISOString().split("T")[0]} ${String(bucket).padStart(2, "0")}:00`;
+  const snapshotKey = getBucketKey(now);
 
   for (const { id: pid } of userPortfolios) {
     const portfolioHoldings = await db
