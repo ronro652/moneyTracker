@@ -10,6 +10,7 @@ import {
 import { eq, and, gt } from "drizzle-orm";
 import { fetchStockQuote, fetchCryptoQuote, fetchDividends } from "./finnhub";
 import { logger } from "./logger";
+import { setCachedDividendApiStatus } from "./dividendApiStatus";
 
 const BUCKET_HOURS = 3;
 
@@ -158,19 +159,30 @@ export async function refreshDividends(userId: number) {
     if (h.assetType === "crypto" || seen.has(h.ticker)) continue;
     seen.add(h.ticker);
 
-    let apiDividends;
+    let result;
     try {
-      apiDividends = await fetchDividends(h.ticker, from, to);
+      result = await fetchDividends(h.ticker, from, to);
     } catch (e) {
       logger.error({ ticker: h.ticker, err: e }, "Failed to fetch dividends");
       continue;
     }
 
+    if (result.restricted) {
+      // Account-level restriction (e.g. the free Finnhub plan doesn't
+      // include /stock/dividend) - fetchDividends() already logged a
+      // warning. No ticker will succeed this run, so stop early instead of
+      // burning API quota on calls that are guaranteed to fail.
+      setCachedDividendApiStatus(true);
+      break;
+    }
+
+    setCachedDividendApiStatus(false);
+
     const holdingsForTicker = userHoldings.filter(
       (uh) => uh.ticker === h.ticker,
     );
 
-    for (const div of apiDividends) {
+    for (const div of result.dividends) {
       for (const holding of holdingsForTicker) {
         const amount = div.amount * holding.shares;
         await db

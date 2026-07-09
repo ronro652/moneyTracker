@@ -60,16 +60,29 @@ export async function POST(req: NextRequest) {
   const tickerUpper = ticker.toUpperCase();
   const amount = dividend_per_share * shares;
 
-  await db.insert(dividends).values({
-    portfolioId: portfolio_id,
-    ticker: tickerUpper,
-    amount,
-    dividendPerShare: dividend_per_share,
-    shares,
-    exDate: ex_date,
-    payDate: pay_date || null,
-    source: "manual",
-  });
+  try {
+    await db.insert(dividends).values({
+      portfolioId: portfolio_id,
+      ticker: tickerUpper,
+      amount,
+      dividendPerShare: dividend_per_share,
+      shares,
+      exDate: ex_date,
+      payDate: pay_date || null,
+      source: "manual",
+    });
+  } catch (e) {
+    // Unique violation on (ticker, ex_date, portfolio_id) - surface a
+    // friendly error instead of letting the raw DB exception 500 out.
+    const code = (e as { code?: string })?.code;
+    if (code === "23505") {
+      return NextResponse.json(
+        { error: `A dividend for ${tickerUpper} on ${ex_date} already exists in this portfolio.` },
+        { status: 409 },
+      );
+    }
+    throw e;
+  }
 
   return NextResponse.json({ success: true });
 }

@@ -53,6 +53,7 @@ export default function Dashboard() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showAddSheet, setShowAddSheet] = useState(false);
   const [view, setView] = useState<View>("monitor");
+  const [dividendsVersion, setDividendsVersion] = useState(0);
   const lastRefreshRef = useRef<number>(0);
 
   useEffect(() => {
@@ -169,6 +170,11 @@ export default function Dashboard() {
     await refreshPrices();
   };
 
+  const handleDividendAdded = async () => {
+    await fetchDividends();
+    setDividendsVersion((v) => v + 1);
+  };
+
   const handlePortfolioChange = () => {
     fetchPortfolios();
     fetchHoldings();
@@ -212,9 +218,22 @@ export default function Dashboard() {
       case "transactions":
         return <TransactionHistory key={widget.id} transactions={transactions} />;
       case "dividends":
-        return <DividendHistory key={widget.id} dividends={dividends} />;
+        return (
+          <DividendHistory
+            key={widget.id}
+            dividends={dividends}
+            portfolioId={displayPortfolioId}
+            onAdded={handleDividendAdded}
+          />
+        );
       case "expected-dividends":
-        return <ExpectedDividends key={widget.id} activePortfolioId={activePortfolioId} />;
+        return (
+          <ExpectedDividends
+            key={widget.id}
+            activePortfolioId={activePortfolioId}
+            refreshKey={dividendsVersion}
+          />
+        );
       default:
         return null;
     }
