@@ -12,6 +12,7 @@ import {
   ReferenceDot,
 } from "recharts";
 import { PortfolioSnapshot, Transaction } from "@/types";
+import { getBucketKey } from "@/lib/dateBucket";
 
 type Range = "1W" | "1M" | "3M" | "6M" | "1Y" | "ALL";
 const RANGES: Range[] = ["1W", "1M", "3M", "6M", "1Y", "ALL"];
@@ -72,8 +73,7 @@ export default function PortfolioChart({ snapshots, transactions = [] }: Props) 
   const txByDate = new Map<string, { buys: number; sells: number }>();
   for (const t of transactions) {
     const txDate = new Date(t.created_at);
-    const bucket = Math.floor(txDate.getUTCHours() / 6) * 6;
-    const key = `${txDate.toISOString().split("T")[0]} ${String(bucket).padStart(2, "0")}:00`;
+    const key = getBucketKey(txDate);
     const entry = txByDate.get(key) || { buys: 0, sells: 0 };
     if (t.type === "buy") entry.buys += t.total_amount;
     else entry.sells += t.total_amount;

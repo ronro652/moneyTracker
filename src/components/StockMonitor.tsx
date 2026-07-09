@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { Holding, Portfolio } from "@/types";
 import StockDayChart from "./StockDayChart";
+import { formatShares } from "@/lib/shares";
 
 interface Props {
   holdings: Holding[];
@@ -13,6 +14,7 @@ interface Props {
 }
 
 type SortKey = "value" | "day" | "gainPct" | "ticker";
+type AssetFilter = "all" | "stocks";
 
 interface AggregatedHolding {
   ticker: string;
@@ -76,6 +78,7 @@ const fmtCompact = (n: number) =>
 
 export default function StockMonitor({ holdings, portfolios, refreshing, lastUpdated, onRefresh }: Props) {
   const [sortKey, setSortKey] = useState<SortKey>("value");
+  const [assetFilter, setAssetFilter] = useState<AssetFilter>("all");
   const [expandedTicker, setExpandedTicker] = useState<string | null>(null);
 
   const totalValue = useMemo(
@@ -106,7 +109,10 @@ export default function StockMonitor({ holdings, portfolios, refreshing, lastUpd
   const totalGainPct = totalCost > 0 ? (totalGain / totalCost) * 100 : 0;
 
   const sorted = useMemo(() => {
-    const agg = aggregateHoldings(holdings);
+    let agg = aggregateHoldings(holdings);
+    if (assetFilter === "stocks") {
+      agg = agg.filter((h) => h.asset_type !== "crypto");
+    }
     agg.sort((a, b) => {
       const af = getAggFields(a);
       const bf = getAggFields(b);
@@ -118,7 +124,7 @@ export default function StockMonitor({ holdings, portfolios, refreshing, lastUpd
       }
     });
     return agg;
-  }, [holdings, sortKey]);
+  }, [holdings, sortKey, assetFilter]);
 
   if (holdings.length === 0) {
     return (
@@ -176,29 +182,55 @@ export default function StockMonitor({ holdings, portfolios, refreshing, lastUpd
         </div>
       </div>
 
-      {/* Sort controls */}
-      <div className="flex items-center gap-1.5 px-1">
-        {([
-          ["value", "Value"],
-          ["day", "Day %"],
-          ["gainPct", "Gain %"],
-          ["ticker", "A–Z"],
-        ] as [SortKey, string][]).map(([key, label]) => (
-          <button
-            key={key}
-            onClick={() => setSortKey(key)}
-            className={`text-xs px-3 py-1.5 rounded-full transition-colors ${
-              sortKey === key
-                ? "bg-indigo-600 text-white shadow-sm"
-                : "bg-white text-gray-500 border border-gray-200 hover:border-indigo-300 hover:text-indigo-600"
-            }`}
-          >
-            {label}
-          </button>
-        ))}
+      {/* Sort controls + asset filter */}
+      <div className="flex items-center justify-between gap-1.5 px-1 flex-wrap">
+        <div className="flex items-center gap-1.5">
+          {([
+            ["value", "Value"],
+            ["day", "Day %"],
+            ["gainPct", "Gain %"],
+            ["ticker", "A–Z"],
+          ] as [SortKey, string][]).map(([key, label]) => (
+            <button
+              key={key}
+              onClick={() => setSortKey(key)}
+              className={`text-xs px-3 py-1.5 rounded-full transition-colors ${
+                sortKey === key
+                  ? "bg-indigo-600 text-white shadow-sm"
+                  : "bg-white text-gray-500 border border-gray-200 hover:border-indigo-300 hover:text-indigo-600"
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+
+        <div className="flex bg-gray-100 rounded-xl p-0.5">
+          {([
+            ["all", "All"],
+            ["stocks", "Stocks"],
+          ] as [AssetFilter, string][]).map(([key, label]) => (
+            <button
+              key={key}
+              onClick={() => setAssetFilter(key)}
+              className={`text-xs font-medium px-2.5 py-1.5 rounded-md transition-colors ${
+                assetFilter === key
+                  ? "bg-indigo-600 text-white shadow-sm"
+                  : "text-gray-500 hover:text-gray-700"
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Stock list */}
+      {sorted.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-12 gap-2">
+          <p className="text-gray-400 text-sm">No stocks to show</p>
+        </div>
+      ) : (
       <div className="space-y-2.5">
         {sorted.map((h, index) => {
           const { value, gain, gainPct, dayDollar } = getAggFields(h);
@@ -208,46 +240,52 @@ export default function StockMonitor({ holdings, portfolios, refreshing, lastUpd
           return (
             <div
               key={h.ticker}
-              className={`bg-white ${dayBorder} rounded-2xl px-5 py-4 shadow-md shadow-black/5 hover:shadow-lg transition-all cursor-pointer`}
+              className={`bg-white ${dayBorder} rounded-2xl px-4 ${isExpanded ? "py-3" : "py-2"} shadow-md shadow-black/5 hover:shadow-lg transition-all cursor-pointer`}
               style={{ animation: 'slideUp 0.3s ease-out', animationDelay: `${index * 40}ms`, animationFillMode: 'both' }}
               onClick={() => setExpandedTicker(isExpanded ? null : h.ticker)}
             >
-              {/* Top row: ticker + daily change hero */}
-              <div className="flex items-start justify-between">
-                <div className="min-w-0 flex-1 mr-3">
-                  <div className="flex items-center gap-2">
-                    <span className="font-bold text-gray-900 text-lg">{h.ticker}</span>
-                    {h.asset_type === "crypto" && (
-                      <span className="text-[10px] font-medium bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded-full">
-                        CRYPTO
-                      </span>
-                    )}
-                    <svg
-                      className={`w-3.5 h-3.5 text-gray-300 transition-transform ${isExpanded ? "rotate-180" : ""}`}
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                    </svg>
+              {/* Collapsed row: ticker + name, price, day change, value */}
+              <div className="flex items-center justify-between gap-2">
+                <div className="min-w-0 flex-1 flex items-center gap-2">
+                  <svg
+                    className={`w-3 h-3 text-gray-300 flex-shrink-0 transition-transform ${isExpanded ? "rotate-180" : ""}`}
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-1.5">
+                      <span className="font-bold text-gray-900 text-sm">{h.ticker}</span>
+                      {h.asset_type === "crypto" && (
+                        <span className="text-[9px] font-medium bg-amber-100 text-amber-700 px-1 py-0.5 rounded-full">
+                          CRYPTO
+                        </span>
+                      )}
+                    </div>
+                    {isExpanded && <p className="text-xs text-gray-400 truncate">{h.name}</p>}
                   </div>
-                  <p className="text-xs text-gray-400 truncate">{h.name}</p>
                 </div>
 
                 {h.price > 0 && (
-                  <div className="text-right flex-shrink-0">
-                    <p className={`text-xl font-bold ${h.dayChange >= 0 ? "text-emerald-600" : "text-rose-500"}`}>
-                      {h.dayChange >= 0 ? "+" : ""}{h.dayChange.toFixed(2)}%
-                    </p>
-                    <p className={`text-sm font-semibold ${h.dayChange >= 0 ? "text-emerald-600/70" : "text-rose-500/70"}`}>
-                      {dayDollar >= 0 ? "+" : ""}{fmtCompact(dayDollar)}
-                    </p>
+                  <div className="flex items-center gap-4 flex-shrink-0">
+                    <span className="text-sm text-gray-500 tabular-nums hidden sm:inline">{fmt(h.price)}</span>
+                    <span className="text-sm text-gray-700 font-medium tabular-nums w-20 text-right">{fmtCompact(value)}</span>
+                    <div className="text-right w-20">
+                      <p className={`text-sm font-bold ${h.dayChange >= 0 ? "text-emerald-600" : "text-rose-500"}`}>
+                        {h.dayChange >= 0 ? "+" : ""}{h.dayChange.toFixed(2)}%
+                      </p>
+                      <p className={`text-[11px] font-medium ${h.dayChange >= 0 ? "text-emerald-600/70" : "text-rose-500/70"}`}>
+                        {dayDollar >= 0 ? "+" : ""}{fmtCompact(dayDollar)}
+                      </p>
+                    </div>
                   </div>
                 )}
               </div>
 
-              {/* Price + position details */}
-              {h.price > 0 && (
+              {/* Expanded detail: full stats grid + chart */}
+              {isExpanded && h.price > 0 && (
                 <div className="grid grid-cols-4 gap-2 mt-3 pt-3 border-t border-gray-100">
                   <div>
                     <span className="text-gray-400 text-[10px] uppercase tracking-wide">Price</span>
@@ -259,7 +297,7 @@ export default function StockMonitor({ holdings, portfolios, refreshing, lastUpd
                   </div>
                   <div>
                     <span className="text-gray-400 text-[10px] uppercase tracking-wide">Shares</span>
-                    <p className="text-gray-700 text-sm">{h.shares}</p>
+                    <p className="text-gray-700 text-sm">{formatShares(h.shares)}</p>
                   </div>
                   <div className="text-right">
                     <span className="text-gray-400 text-[10px] uppercase tracking-wide">Overall</span>
@@ -278,6 +316,7 @@ export default function StockMonitor({ holdings, portfolios, refreshing, lastUpd
           );
         })}
       </div>
+      )}
     </div>
   );
 }

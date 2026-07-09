@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Transaction } from "@/types";
+import { formatShares } from "@/lib/shares";
 
 interface Props {
   transactions: Transaction[];
@@ -104,7 +105,7 @@ export default function TransactionHistory({ transactions }: Props) {
             <div className="grid grid-cols-2 gap-y-1 gap-x-4 text-sm">
               <div>
                 <span className="text-gray-400 text-xs">Shares</span>
-                <p className="text-gray-700">{t.shares}</p>
+                <p className="text-gray-700">{formatShares(t.shares)}</p>
               </div>
               <div>
                 <span className="text-gray-400 text-xs">Price</span>
@@ -171,7 +172,7 @@ export default function TransactionHistory({ transactions }: Props) {
                   </span>
                 </td>
                 <td className="py-3 px-2 text-gray-600 max-w-[150px] truncate">{t.name}</td>
-                <td className="py-3 px-2 text-right text-gray-600">{t.shares}</td>
+                <td className="py-3 px-2 text-right text-gray-600">{formatShares(t.shares)}</td>
                 <td className="py-3 px-2 text-right text-gray-600">{fmt(t.price_per_share)}</td>
                 <td className="py-3 px-2 text-right text-gray-900 font-medium">{fmt(t.total_amount)}</td>
                 <td className={`py-3 px-2 text-right font-medium ${

@@ -2,6 +2,7 @@ import { db } from "@/lib/db";
 import { holdings, portfolios, stockPrices } from "@/lib/db/schema";
 import { requireAuth } from "@/lib/require-auth";
 import { addHoldingSchema } from "@/lib/validations";
+import { roundShares } from "@/lib/shares";
 import { eq, and, sql } from "drizzle-orm";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -69,7 +70,7 @@ export async function POST(req: NextRequest) {
 
   if (existing.length > 0) {
     const h = existing[0];
-    const totalShares = h.shares + shares;
+    const totalShares = roundShares(h.shares + shares);
     const totalCost = h.shares * h.avgCost + shares * avg_cost;
     const newAvgCost = totalCost / totalShares;
     await db.update(holdings).set({ shares: totalShares, avgCost: newAvgCost }).where(eq(holdings.id, h.id));

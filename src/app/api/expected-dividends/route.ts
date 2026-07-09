@@ -1,6 +1,7 @@
 import { db } from "@/lib/db";
 import { dividends, holdings, portfolios } from "@/lib/db/schema";
 import { requireAuth } from "@/lib/require-auth";
+import { roundShares } from "@/lib/shares";
 import { eq, and, sql } from "drizzle-orm";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -67,7 +68,7 @@ export async function GET(req: NextRequest) {
   for (const h of stockHoldings) {
     const existing = tickerShares.get(h.ticker);
     if (existing) {
-      existing.totalShares += h.shares;
+      existing.totalShares = roundShares(existing.totalShares + h.shares);
     } else {
       tickerShares.set(h.ticker, { name: h.name, totalShares: h.shares });
     }

@@ -142,7 +142,7 @@ export default function DividendHistory({ dividends, portfolioId, onAdded }: Pro
               </div>
               <div>
                 <span className="text-gray-400 text-xs">Shares</span>
-                <p className="text-gray-700">{d.shares}</p>
+                <p className="text-gray-700">{formatShares(d.shares)}</p>
               </div>
               <div>
                 <span className="text-gray-400 text-xs">Total</span>
@@ -180,7 +180,7 @@ export default function DividendHistory({ dividends, portfolioId, onAdded }: Pro
                 </td>
                 <td className="py-3 px-2 font-bold text-gray-900">{d.ticker}</td>
                 <td className="py-3 px-2 text-right text-gray-600">{fmt(d.dividend_per_share)}</td>
-                <td className="py-3 px-2 text-right text-gray-600">{d.shares}</td>
+                <td className="py-3 px-2 text-right text-gray-600">{formatShares(d.shares)}</td>
                 <td className="py-3 px-2 text-right text-emerald-600 font-medium">{fmt(d.amount)}</td>
                 <td className="py-3 px-2">
                   <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${
