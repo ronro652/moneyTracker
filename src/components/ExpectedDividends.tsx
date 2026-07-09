@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { ExpectedDividend } from "@/types";
+import { formatShares } from "@/lib/shares";
 
 interface Props {
   activePortfolioId: number | null;
@@ -145,7 +146,7 @@ export default function ExpectedDividends({ activePortfolioId }: Props) {
             <div className="grid grid-cols-2 gap-y-1 gap-x-4 text-sm">
               <div>
                 <span className="text-gray-400 text-xs">Shares</span>
-                <p className="text-gray-700">{e.current_shares}</p>
+                <p className="text-gray-700">{formatShares(e.current_shares)}</p>
               </div>
               <div>
                 <span className="text-gray-400 text-xs">$/Share</span>
@@ -204,7 +205,7 @@ export default function ExpectedDividends({ activePortfolioId }: Props) {
                     {freqLabel[e.frequency]}
                   </span>
                 </td>
-                <td className="py-3 px-2 text-right text-gray-600">{e.current_shares}</td>
+                <td className="py-3 px-2 text-right text-gray-600">{formatShares(e.current_shares)}</td>
                 <td className="py-3 px-2 text-right text-gray-600">{fmt(e.last_dividend_per_share)}</td>
                 <td className="py-3 px-2 text-right text-emerald-600 font-medium">{fmt(e.estimated_amount)}</td>
                 <td className="py-3 px-2 text-right text-emerald-600 font-medium">{fmt(e.annual_estimate)}</td>

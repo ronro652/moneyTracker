@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { Holding, Portfolio } from "@/types";
 import StockDayChart from "./StockDayChart";
+import { formatShares } from "@/lib/shares";
 
 interface Props {
   holdings: Holding[];
@@ -259,7 +260,7 @@ export default function StockMonitor({ holdings, portfolios, refreshing, lastUpd
                   </div>
                   <div>
                     <span className="text-gray-400 text-[10px] uppercase tracking-wide">Shares</span>
-                    <p className="text-gray-700 text-sm">{h.shares}</p>
+                    <p className="text-gray-700 text-sm">{formatShares(h.shares)}</p>
                   </div>
                   <div className="text-right">
                     <span className="text-gray-400 text-[10px] uppercase tracking-wide">Overall</span>

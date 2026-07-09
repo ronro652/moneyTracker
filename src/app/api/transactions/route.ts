@@ -2,6 +2,7 @@ import { db } from "@/lib/db";
 import { investmentTransactions, holdings, portfolios } from "@/lib/db/schema";
 import { requireAuth } from "@/lib/require-auth";
 import { createTransactionSchema } from "@/lib/validations";
+import { roundShares } from "@/lib/shares";
 import { eq, and, sql } from "drizzle-orm";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -82,7 +83,7 @@ export async function POST(req: NextRequest) {
     }
 
     const realizedGain = (price_per_share - holding.avgCost) * shares;
-    const remainingShares = holding.shares - shares;
+    const remainingShares = roundShares(holding.shares - shares);
 
     if (remainingShares < 0.0001) {
       await db.delete(holdings).where(eq(holdings.id, holding.id));
@@ -119,7 +120,7 @@ export async function POST(req: NextRequest) {
 
   if (existing.length > 0) {
     const h = existing[0];
-    const totalShares = h.shares + shares;
+    const totalShares = roundShares(h.shares + shares);
     const totalCost = h.shares * h.avgCost + shares * price_per_share;
     const newAvgCost = totalCost / totalShares;
     await db.update(holdings).set({ shares: totalShares, avgCost: newAvgCost }).where(eq(holdings.id, h.id));
