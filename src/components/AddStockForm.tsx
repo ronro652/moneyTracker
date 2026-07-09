@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { useToast } from "./Toast";
 import type { AssetType, TransactionType } from "@/types";
 
@@ -29,6 +29,7 @@ export default function AddStockForm({ onAdded, portfolioId, open, onClose }: Pr
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
   const [showSearch, setShowSearch] = useState(false);
   const [searchTimeout, setSearchTimeout] = useState<NodeJS.Timeout | null>(null);
+  const tickerInputRef = useRef<HTMLInputElement>(null);
 
   const isBottomSheet = open !== undefined;
   const isSell = transactionType === "sell";
@@ -39,6 +40,15 @@ export default function AddStockForm({ onAdded, portfolioId, open, onClose }: Pr
       return () => {
         document.body.style.overflow = "";
       };
+    }
+  }, [isBottomSheet, open]);
+
+  // Focus the ticker input only when the bottom sheet actually opens, not on
+  // every mount — the sheet stays mounted (just translated off-screen) while
+  // closed, so a mount-time autoFocus would pop the keyboard for a hidden field.
+  useEffect(() => {
+    if (isBottomSheet && open) {
+      tickerInputRef.current?.focus();
     }
   }, [isBottomSheet, open]);
 
@@ -207,6 +217,7 @@ export default function AddStockForm({ onAdded, portfolioId, open, onClose }: Pr
         </label>
         <div className="relative">
           <input
+            ref={tickerInputRef}
             type="text"
             value={ticker}
             onChange={(e) => handleSearch(e.target.value.toUpperCase())}
@@ -214,7 +225,6 @@ export default function AddStockForm({ onAdded, portfolioId, open, onClose }: Pr
             placeholder={isCrypto ? "BTC" : "AAPL"}
             className="w-full bg-white border border-gray-200 rounded-xl px-3 py-3 text-gray-900 placeholder-gray-400 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
             required
-            autoFocus={isBottomSheet}
           />
           {showSearch && (
             <div className="absolute z-10 top-full mt-1 w-full bg-white border border-gray-100 rounded-xl shadow-xl max-h-48 overflow-auto">
