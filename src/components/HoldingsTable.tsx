@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from "react";
 import { Holding, Portfolio } from "@/types";
+import { formatShares } from "@/lib/shares";
 
 type SortKey = "ticker" | "name" | "shares" | "avg_cost" | "price" | "value" | "gain" | "gainPct" | "day";
 type SortDir = "asc" | "desc";
@@ -186,7 +187,7 @@ export default function HoldingsTable({ holdings, portfolios = [], activePortfol
               <div className="grid grid-cols-2 gap-y-2 gap-x-4 text-sm">
                 <div>
                   <span className="text-gray-400 text-xs">Shares</span>
-                  <p className="text-gray-600">{h.shares}</p>
+                  <p className="text-gray-600">{formatShares(h.shares)}</p>
                 </div>
                 <div>
                   <span className="text-gray-400 text-xs">Avg Cost</span>
@@ -317,7 +318,7 @@ export default function HoldingsTable({ holdings, portfolios = [], activePortfol
                     {h.name}
                   </td>
                   <td className="py-3 px-2 text-right text-gray-600">
-                    {h.shares}
+                    {formatShares(h.shares)}
                   </td>
                   <td className="py-3 px-2 text-right text-gray-600">
                     {fmt(h.avg_cost)}
